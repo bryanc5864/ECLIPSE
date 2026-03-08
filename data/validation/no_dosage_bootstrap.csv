@@ -1,0 +1,2 @@
+comparison,observed_diff,ci_low,ci_high,p_value
+no_dosage_vs_full,-0.12755417956656356,-0.2116478496948342,-0.053743084168590416,0.9999

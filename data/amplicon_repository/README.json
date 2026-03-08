@@ -1,0 +1,18 @@
+{
+  "source": "AmpliconRepository",
+  "url": "https://ampliconrepository.org",
+  "description": "ecDNA annotations from AmpliconArchitect analysis",
+  "total_samples": "~4,500",
+  "ecdna_positive": "~1,400 (31%)",
+  "data_sources": [
+    "TCGA",
+    "PCAWG",
+    "CCLE"
+  ],
+  "classification_types": [
+    "Circular (ecDNA)",
+    "BFB",
+    "Linear"
+  ],
+  "access": "Open (Creative Commons v4)"
+}

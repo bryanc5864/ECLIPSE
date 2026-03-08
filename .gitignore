@@ -1,0 +1,62 @@
+# Data files (too large for git)
+data/depmap/*.csv
+data/hic/*.mcool
+data/ecdna_labels/*.xlsx
+data/reference/
+data/ecdna_trajectories/
+data/gdsc/
+ecSimulator/
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.mcool
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Checkpoints
+checkpoints/
+outputs/
+wandb/

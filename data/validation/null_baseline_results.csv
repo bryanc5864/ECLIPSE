@@ -1,0 +1,2 @@
+observed_validated,observed_candidates,observed_rate,wilson_ci_low,wilson_ci_high,null_mean,null_std,null_95th_pctile,p_value,enrichment,n_simulations,n_validation_genes_in_pool,n_total_genes
+14,47,0.2978723404255319,0.18651250504604835,0.4397767391904607,0.36537,0.6009282512080789,2.0,0.0,38.317322166570875,100000,135,17453

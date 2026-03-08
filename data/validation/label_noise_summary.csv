@@ -1,0 +1,2 @@
+auroc_all,auroc_labeled_only,auroc_with_possible,n_unlabeled_pred_positive,n_neg_pred_positive,mean_pred_Y,mean_pred_N,mean_pred_P,mean_pred_unlabeled
+0.9441605368434638,0.9460903247775934,0.8549705901363842,79,36,0.529653884773332,0.1606744219651397,0.2387333274460756,0.17344960452227257

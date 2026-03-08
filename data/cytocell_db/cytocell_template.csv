@@ -1,0 +1,2 @@
+cell_line,depmap_id,ecdna_status,ecdna_genes,validation_method,source
+Example_Line,ACH-000001,positive,"MYC,EGFR",FISH,CytoCellDB
