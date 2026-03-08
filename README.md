@@ -298,8 +298,8 @@ trainer.train(num_epochs=100)
 ECLIPSE/
 ├── LICENSE                        # MIT License
 ├── README.md                      # This file
-├── requirements.txt               # Python dependencies
-├── setup.py                       # Package configuration
+├── pyproject.toml                 # Project metadata and dependencies
+├── requirements.txt               # Pinned dependency versions
 ├── main.py                        # CLI entry point
 ├── data/                          # Downloaded data (see DATA_STATUS.md)
 │   ├── DATA_STATUS.md             # Data sources and download instructions
