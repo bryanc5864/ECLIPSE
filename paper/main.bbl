@@ -1,0 +1,376 @@
+\begin{thebibliography}{36}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{4D Nucleome Consortium}(2017)]{4dn_2017}
+{4D Nucleome Consortium}.
+\newblock The {4D} nucleome project.
+\newblock \emph{Nature}, 549\penalty0 (7671):\penalty0 219--226, 2017.
+\newblock \doi{10.1038/nature23884}.
+
+\bibitem[Arjovsky et~al.(2019)Arjovsky, Bottou, Gulrajani, and
+  Lopez-Paz]{arjovsky_2019_irm}
+Martin Arjovsky, L{\'e}on Bottou, Ishaan Gulrajani, and David Lopez-Paz.
+\newblock Invariant risk minimization.
+\newblock \emph{arXiv preprint arXiv:1907.02893}, 2019.
+
+\bibitem[Behan et~al.(2019)Behan, Iorio, Picco, Gon{\c{c}}alves, Beaver,
+  Migliardi, Santos, Rao, Sassi, Pinnelli, Ansari, Harper, Jackson, McRae,
+  Pooley, Wilkinson, van~der Meer, Dow, Buser-Doepner, Bertotti, Trusolino,
+  Stronach, Saez-Rodriguez, Yusa, and Garnett]{behan_2019_prioritization}
+Fiona~M. Behan, Francesco Iorio, Gabriele Picco, Emanuel Gon{\c{c}}alves,
+  Charlotte~M. Beaver, Giorgia Migliardi, Rita Santos, Yanhua Rao, Francesco
+  Sassi, Marika Pinnelli, Rizwan Ansari, Sarah Harper, David~Adam Jackson,
+  Rebecca McRae, Rachel Pooley, Piers Wilkinson, Dieudonne van~der Meer, David
+  Dow, Carolyn Buser-Doepner, Andrea Bertotti, Livio Trusolino, Euan~A.
+  Stronach, Julio Saez-Rodriguez, Kosuke Yusa, and Mathew~J. Garnett.
+\newblock Prioritization of cancer therapeutic targets using {CRISPR}--{Cas9}
+  screens.
+\newblock \emph{Nature}, 568\penalty0 (7753):\penalty0 511--516, 2019.
+\newblock \doi{10.1038/s41586-019-1103-9}.
+
+\bibitem[Chen et~al.(2018)Chen, Rubanova, Bettencourt, and
+  Duvenaud]{chen_2018_neuralode}
+Ricky T.~Q. Chen, Yulia Rubanova, Jesse Bettencourt, and David Duvenaud.
+\newblock Neural ordinary differential equations.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~31, 2018.
+
+\bibitem[Cho et~al.(2014)Cho, van Merrienboer, Gulcehre, Bahdanau, Bougares,
+  Schwenk, and Bengio]{cho_2014_gru}
+Kyunghyun Cho, Bart van Merrienboer, Caglar Gulcehre, Dzmitry Bahdanau, Fethi
+  Bougares, Holger Schwenk, and Yoshua Bengio.
+\newblock Learning phrase representations using {RNN} encoder-decoder for
+  statistical machine translation.
+\newblock In \emph{Proceedings of the Conference on Empirical Methods in
+  Natural Language Processing}, pp.\  1724--1734, 2014.
+
+\bibitem[{DepMap, Broad}(2023)]{depmap_2023}
+{DepMap, Broad}.
+\newblock {DepMap} 23q2 public.
+\newblock \emph{figshare}, 2023.
+\newblock \doi{10.6084/m9.figshare.22765112.v2}.
+
+\bibitem[Deshpande et~al.(2019)Deshpande, Luebeck, Nguyen, Bakhtiari, Turner,
+  Schwab, Carter, Mischel, and Bafna]{deshpande_2019_amplicon}
+Viraj Deshpande, Jens Luebeck, Nam-Phuong~D. Nguyen, Mehrdad Bakhtiari,
+  Kristen~M. Turner, Richard Schwab, Hannah Carter, Paul~S. Mischel, and Vineet
+  Bafna.
+\newblock Exploring the landscape of focal amplifications in cancer using
+  {AmpliconArchitect}.
+\newblock \emph{Nature Communications}, 10\penalty0 (1):\penalty0 392, 2019.
+\newblock \doi{10.1038/s41467-018-08200-y}.
+
+\bibitem[Fessler et~al.(2024)Fessler, Ting, Yi, Haase, Chen, Gulec, Wang,
+  Smyers, Goble, Cannon, Mehta, Ford, and Brunk]{cytocelldb_2024}
+Jacob Fessler, Stephanie Ting, Hong Yi, Santiago Haase, Jingting Chen, Saygin
+  Gulec, Yue Wang, Nathan Smyers, Kohen Goble, Danielle Cannon, Aarav Mehta,
+  Christina Ford, and Elizabeth Brunk.
+\newblock {CytoCellDB}: a comprehensive resource for exploring extrachromosomal
+  {DNA} in cancer cell lines.
+\newblock \emph{NAR Cancer}, 6\penalty0 (3):\penalty0 zcae035, 2024.
+\newblock \doi{10.1093/narcan/zcae035}.
+
+\bibitem[Gutteridge et~al.(2016)Gutteridge, Ndiaye, Liu, and
+  Ahmad]{gutteridge_2016_plk1}
+Rebecca E.~A. Gutteridge, Michelle~A. Ndiaye, Xiaoqing Liu, and Nihal Ahmad.
+\newblock Plk1 inhibitors in cancer therapy: From laboratory to clinics.
+\newblock \emph{Molecular Cancer Therapeutics}, 15\penalty0 (7):\penalty0
+  1427--1435, 2016.
+\newblock \doi{10.1158/1535-7163.MCT-15-0897}.
+
+\bibitem[Hung et~al.(2021)Hung, Yost, Xie, Shi, Helmsauer, Luebeck,
+  Sch{\"o}pflin, Lange, Chamorro~Gonz{\'a}lez, Weiser, Chen, Valieva, Wong, Wu,
+  Dehkordi, Duffy, Kraft, Tang, Belk, Rose, Corces, Granja, Li, Rajkumar,
+  Friedlein, Bagchi, Satpathy, Tjian, Mundlos, Bafna, Henssen, Mischel, Liu,
+  and Chang]{hung_2021_ecdna_hubs}
+King~L. Hung, Kathryn~E. Yost, Liangqi Xie, Quanming Shi, Konstantin Helmsauer,
+  Jens Luebeck, Robert Sch{\"o}pflin, Joshua~T. Lange, Roc{\'i}o
+  Chamorro~Gonz{\'a}lez, Natasha~E. Weiser, Celine Chen, Maria~E. Valieva, Ivy
+  Tsz-Lo Wong, Sihan Wu, Siavash~R. Dehkordi, Connor~V. Duffy, Katerina Kraft,
+  Jun Tang, Julia~A. Belk, John~C. Rose, M.~Ryan Corces, Jeffrey~M. Granja, Rui
+  Li, Utkrisht Rajkumar, Jordan Friedlein, Anindya Bagchi, Ansuman~T. Satpathy,
+  Robert Tjian, Stefan Mundlos, Vineet Bafna, Anton~G. Henssen, Paul~S.
+  Mischel, Zhe Liu, and Howard~Y. Chang.
+\newblock ec{DNA} hubs drive cooperative intermolecular oncogene expression.
+\newblock \emph{Nature}, 600\penalty0 (7890):\penalty0 731--736, 2021.
+\newblock \doi{10.1038/s41586-021-04116-8}.
+
+\bibitem[Jaegle et~al.(2021)Jaegle, Gimeno, Brock, Zisserman, Vinyals, and
+  Carreira]{jaegle_2021_perceiver}
+Andrew Jaegle, Felix Gimeno, Andrew Brock, Andrew Zisserman, Oriol Vinyals, and
+  Joao Carreira.
+\newblock Perceiver: General perception with iterative attention.
+\newblock In \emph{International Conference on Machine Learning}, pp.\
+  4651--4664, 2021.
+
+\bibitem[Kim et~al.(2020)Kim, Nguyen, Turner, Wu, Gujar, Luebeck, Liu,
+  Deshpande, Rajkumar, Namburi, Amin, Yi, Menghi, Schulte, Henssen, Chang,
+  Beck, Mischel, Bafna, and Verhaak]{kim_2020_ecdna_prognosis}
+Hoon Kim, Nam-Phuong Nguyen, Kristen Turner, Sihan Wu, Amit~D. Gujar, Jens
+  Luebeck, Jihe Liu, Viraj Deshpande, Utkrisht Rajkumar, Sandeep Namburi,
+  Samirkumar~B. Amin, Eunhee Yi, Francesca Menghi, Johannes~H. Schulte,
+  Anton~G. Henssen, Howard~Y. Chang, Christine~R. Beck, Paul~S. Mischel, Vineet
+  Bafna, and Roel G.~W. Verhaak.
+\newblock Extrachromosomal {DNA} is associated with oncogene amplification and
+  poor outcome across multiple cancers.
+\newblock \emph{Nature Genetics}, 52\penalty0 (9):\penalty0 891--897, 2020.
+\newblock \doi{10.1038/s41588-020-0678-2}.
+
+\bibitem[Lange et~al.(2022)Lange, Rose, Chen, Pichugin, Xie, Tang, Hung, Yost,
+  Shi, Erb, Rajkumar, Wu, Taschner-Mandl, Bernkopf, Swanton, Liu, Huang, Chang,
+  Bafna, Henssen, Werner, and Mischel]{lange_2022_mathematical}
+Joshua~T. Lange, John~C. Rose, Celine~Y. Chen, Yuriy Pichugin, Liangqi Xie, Jun
+  Tang, King~L. Hung, Kathryn~E. Yost, Quanming Shi, Marcella~L. Erb, Utkrisht
+  Rajkumar, Sihan Wu, Sabine Taschner-Mandl, Marie Bernkopf, Charles Swanton,
+  Zhe Liu, Weini Huang, Howard~Y. Chang, Vineet Bafna, Anton~G. Henssen,
+  Benjamin Werner, and Paul~S. Mischel.
+\newblock The evolutionary dynamics of extrachromosomal {DNA} in human cancers.
+\newblock \emph{Nature Genetics}, 54\penalty0 (10):\penalty0 1527--1533, 2022.
+\newblock \doi{10.1038/s41588-022-01177-x}.
+
+\bibitem[Li et~al.(2020)Li, Wong, Chen, and Duvenaud]{li_2020_neuralsde}
+Xuechen Li, Ting-Kam~Leonard Wong, Ricky T.~Q. Chen, and David Duvenaud.
+\newblock Scalable gradients for stochastic differential equations.
+\newblock In \emph{Proceedings of the International Conference on Artificial
+  Intelligence and Statistics}, pp.\  3870--3882, 2020.
+
+\bibitem[Lin et~al.(2017)Lin, Goyal, Girshick, He, and
+  Doll{\'a}r]{lin_2017_focal}
+Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, and Piotr Doll{\'a}r.
+\newblock Focal loss for dense object detection.
+\newblock In \emph{Proceedings of the IEEE International Conference on Computer
+  Vision}, pp.\  2980--2988, 2017.
+
+\bibitem[Luebeck et~al.(2020)Luebeck, Coruh, Dehkordi, Lange, Turner,
+  Deshpande, Pai, Zhang, Rajkumar, Law, Mischel, and
+  Bafna]{luebeck_2020_ampliconreconstructor}
+Jens Luebeck, Ceyda Coruh, Siavash~R. Dehkordi, Joshua~T. Lange, Kristen~M.
+  Turner, Viraj Deshpande, Dave~A. Pai, Chao Zhang, Utkrisht Rajkumar, Julie~A.
+  Law, Paul~S. Mischel, and Vineet Bafna.
+\newblock {AmpliconReconstructor} integrates {NGS} and optical mapping to
+  resolve the complex structures of focal amplifications.
+\newblock \emph{Nature Communications}, 11\penalty0 (1):\penalty0 4374, 2020.
+\newblock \doi{10.1038/s41467-020-18099-z}.
+
+\bibitem[Macheret et~al.(2020)Macheret, Bhowmick, Sobkowiak, Padayachy,
+  Mailler, Hickson, and Halazonetis]{macheret_2020_replication}
+Morgane Macheret, Rahul Bhowmick, Katarzyna Sobkowiak, Laura Padayachy,
+  Jonathan Mailler, Ian~D. Hickson, and Thanos~D. Halazonetis.
+\newblock High-resolution mapping of mitotic {DNA} synthesis regions and common
+  fragile sites in the human genome through direct sequencing.
+\newblock \emph{Cell Research}, 30\penalty0 (11):\penalty0 997--1008, 2020.
+\newblock \doi{10.1038/s41422-020-0358-x}.
+
+\bibitem[Meyers et~al.(2017)Meyers, Bryan, McFarland, Weir, Sizemore, Xu,
+  Dharia, Montgomery, Cowley, Pantel, Goodale, Lee, Ali, Jiang, Luber,
+  Tsherniak, Hahn, Root, and Golub]{meyers_2017_ceres}
+Robin~M. Meyers, Jordan~G. Bryan, James~M. McFarland, Barbara~A. Weir, Ann~E.
+  Sizemore, Han Xu, Neekesh~V. Dharia, Phillip~G. Montgomery, Glenn~S. Cowley,
+  Sasha Pantel, Amy Goodale, Yenarae Lee, Levi~D. Ali, Guozhi Jiang, Rakela
+  Luber, Aviad Tsherniak, William~C. Hahn, David~E. Root, and Todd~R. Golub.
+\newblock Computational correction of copy number effect improves specificity
+  of {CRISPR}--{Cas9} essentiality screens in cancer cells.
+\newblock \emph{Nature Genetics}, 49\penalty0 (12):\penalty0 1779--1784, 2017.
+\newblock \doi{10.1038/ng.3984}.
+
+\bibitem[Nathanson et~al.(2014)Nathanson, Gini, Mottahedeh, Visnyei, Koga,
+  Gomez, Eskin, Hwang, Wang, Masui, Paucar, Yang, Ohashi, Zhu, Wykosky, Reed,
+  Nelson, Cloughesy, James, Rao, Kornblum, Heath, Cavenee, Furnari, and
+  Mischel]{nathanson_2014_targeted}
+David~A. Nathanson, Beatrice Gini, Jack Mottahedeh, Koppany Visnyei, Tomoyuki
+  Koga, German Gomez, Ascia Eskin, Kiwook Hwang, Jun Wang, Kenta Masui, Andres
+  Paucar, Huijun Yang, Minori Ohashi, Shaojun Zhu, Jill Wykosky, Rachel Reed,
+  Stanley~F. Nelson, Timothy~F. Cloughesy, C.~David James, P.~Nagesh Rao,
+  Harley~I. Kornblum, James~R. Heath, Webster~K. Cavenee, Frank~B. Furnari, and
+  Paul~S. Mischel.
+\newblock Targeted therapy resistance mediated by dynamic regulation of
+  extrachromosomal mutant {EGFR} {DNA}.
+\newblock \emph{Science}, 343\penalty0 (6166):\penalty0 72--76, 2014.
+\newblock \doi{10.1126/science.1241328}.
+
+\bibitem[O'Leary et~al.(2016)O'Leary, Wright, Brister, et~al.]{refseq_2016}
+Nuala~A. O'Leary, Mathew~W. Wright, J.~Rodney Brister, et~al.
+\newblock Reference sequence ({RefSeq}) database at {NCBI}: current status,
+  taxonomic expansion, and functional annotation.
+\newblock \emph{Nucleic Acids Research}, 44\penalty0 (D1):\penalty0 D733--D745,
+  2016.
+\newblock \doi{10.1093/nar/gkv1189}.
+
+\bibitem[Otto \& Sicinski(2017)Otto and Sicinski]{otto_2017_cell_cycle}
+Tobias Otto and Piotr Sicinski.
+\newblock Cell cycle proteins as promising targets in cancer therapy.
+\newblock \emph{Nature Reviews Cancer}, 17\penalty0 (2):\penalty0 93--115,
+  2017.
+\newblock \doi{10.1038/nrc.2016.138}.
+
+\bibitem[Pacini et~al.(2021)Pacini, Dempster, Boyle, Gon{\c{c}}alves,
+  Najgebauer, Karakoc, van~der Meer, Barthorpe, Lightfoot, Jaaks, McFarland,
+  Garnett, Tsherniak, and Iorio]{deepdep_2021}
+Clare Pacini, Joshua~M. Dempster, Isabella Boyle, Emanuel Gon{\c{c}}alves,
+  Hanna Najgebauer, Emre Karakoc, Dieudonne van~der Meer, Andrew Barthorpe,
+  Howard Lightfoot, Patricia Jaaks, James~M. McFarland, Mathew~J. Garnett,
+  Aviad Tsherniak, and Francesco Iorio.
+\newblock Integrated cross-study datasets of genetic dependencies in cancer.
+\newblock \emph{Nature Communications}, 12\penalty0 (1):\penalty0 1661, 2021.
+\newblock \doi{10.1038/s41467-021-21898-7}.
+
+\bibitem[Rosenfeld et~al.(2021)Rosenfeld, Ravikumar, and
+  Risteski]{rosenfeld_2021_irm_risks}
+Elan Rosenfeld, Pradeep Ravikumar, and Andrej Risteski.
+\newblock The risks of invariant risk minimization.
+\newblock In \emph{International Conference on Learning Representations}, 2021.
+
+\bibitem[Shen et~al.(2019)Shen, Zhao, Ju, Wang, Peng, Labrie, Yap, Mills, and
+  Peng]{shen_2019_atr}
+Jian Shen, Wei Zhao, Zhongbo Ju, Lingyan Wang, Yi~Peng, Marilyne Labrie,
+  Timothy~A. Yap, Gordon~B. Mills, and Gang Peng.
+\newblock {PARPi} triggers the {STING}-dependent immune response and enhances
+  the therapeutic efficacy of immune checkpoint blockade independent of
+  {BRCAness}.
+\newblock \emph{Cancer Research}, 79\penalty0 (2):\penalty0 311--319, 2019.
+\newblock \doi{10.1158/0008-5472.CAN-18-1003}.
+
+\bibitem[Shoshani et~al.(2021)Shoshani, Brunner, Yaeger, Ly, Nechemia-Arbely,
+  Kim, Fang, Castillon, Yu, Li, Sun, Ellisman, Ren, Campbell, and
+  Cleveland]{shoshani_2021_chromothripsis}
+Ofer Shoshani, Simon~F. Brunner, Rona Yaeger, Peter Ly, Yael Nechemia-Arbely,
+  Dong~Hyun Kim, Rui Fang, Guillaume~A. Castillon, Miao Yu, Julia S.~Z. Li,
+  Yanwen Sun, Mark~H. Ellisman, Bing Ren, Peter~J. Campbell, and Don~W.
+  Cleveland.
+\newblock Chromothripsis drives the evolution of gene amplification in cancer.
+\newblock \emph{Nature}, 591\penalty0 (7848):\penalty0 137--141, 2021.
+\newblock \doi{10.1038/s41586-020-03064-z}.
+
+\bibitem[Subramanian et~al.(2005)Subramanian, Tamayo, Mootha, Mukherjee, Ebert,
+  Gillette, Paulovich, Pomeroy, Golub, Lander, and
+  Mesirov]{subramanian_2005_gsea}
+Aravind Subramanian, Pablo Tamayo, Vamsi~K. Mootha, Sayan Mukherjee,
+  Benjamin~L. Ebert, Michael~A. Gillette, Amanda Paulovich, Scott~L. Pomeroy,
+  Todd~R. Golub, Eric~S. Lander, and Jill~P. Mesirov.
+\newblock Gene set enrichment analysis: a knowledge-based approach for
+  interpreting genome-wide expression profiles.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 102\penalty0
+  (43):\penalty0 15545--15550, 2005.
+\newblock \doi{10.1073/pnas.0506580102}.
+
+\bibitem[Tang et~al.(2024)Tang, Weiser, Wang, Chowdhry, Curtis, Zhao, Wong,
+  Marinov, Li, Hanoian, Tse, Mojica, Hansen, Plum, Steffy, Milutinovic, Meyer,
+  Luebeck, Wang, Zhang, Altemose, Curtis, Greenleaf, Bafna, Benkovic,
+  Pinkerton, Kasibhatla, Hassig, Mischel, and Chang]{yi_2024_chk1_ecdna}
+Jun Tang, Natasha~E. Weiser, Guiping Wang, Shulin Chowdhry, Edward~J. Curtis,
+  Yue Zhao, Ivy Tsz-Lo Wong, Georgi~K. Marinov, Rui Li, Philip Hanoian, Eric
+  Tse, Silvia~G. Mojica, Ryan Hansen, Joshua Plum, Adrienne Steffy, Sanja
+  Milutinovic, Scott~T. Meyer, Jens Luebeck, Yan Wang, Shu Zhang, Nicolas
+  Altemose, Christina Curtis, William~J. Greenleaf, Vineet Bafna, Stephen~J.
+  Benkovic, Anthony~B. Pinkerton, Shailaja Kasibhatla, Christian~A. Hassig,
+  Paul~S. Mischel, and Howard~Y. Chang.
+\newblock Enhancing transcription--replication conflict targets
+  ec{DNA}-positive cancers.
+\newblock \emph{Nature}, 635\penalty0 (8037):\penalty0 210--218, 2024.
+\newblock \doi{10.1038/s41586-024-07802-5}.
+
+\bibitem[Tate et~al.(2019)Tate, Bamford, Jubb, Sondka, Beare, Bindal,
+  Boutselakis, Cole, Creatore, Dawson, Fish, Harsha, Hathaway, Jupe, Kok,
+  Noble, Ponting, Ramshaw, Rye, Speedy, Stefancsik, Thompson, Wang, Ward,
+  Campbell, and Forbes]{cosmic_2019}
+John~G. Tate, Sally Bamford, Harry~C. Jubb, Zbyslaw Sondka, David~M. Beare,
+  Nidhi Bindal, Harry Boutselakis, Charlotte~G. Cole, Celestino Creatore,
+  Elisabeth Dawson, Peter Fish, Bhavana Harsha, Charlie Hathaway, Steve~C.
+  Jupe, Chai~Yin Kok, Kate Noble, Laura Ponting, Christopher~C. Ramshaw,
+  Claire~E. Rye, Helen~E. Speedy, Ray Stefancsik, Sam~L. Thompson, Shicai Wang,
+  Sari Ward, Peter~J. Campbell, and Simon~A. Forbes.
+\newblock {COSMIC}: the catalogue of somatic mutations in cancer.
+\newblock \emph{Nucleic Acids Research}, 47\penalty0 (D1):\penalty0 D941--D947,
+  2019.
+\newblock \doi{10.1093/nar/gky1015}.
+
+\bibitem[Tsherniak et~al.(2017)Tsherniak, Vazquez, Montgomery, Weir, Kryukov,
+  Cowley, Gill, Harrington, Pantel, Krill-Burger, Meyers, Ali, Goodale, Lee,
+  Jiang, Hsiao, Gerath, Howell, Merkel, Ghandi, Garraway, Root, Golub, Boehm,
+  and Hahn]{tsherniak_2017_depmap}
+Aviad Tsherniak, Francisca Vazquez, Phil~G. Montgomery, Barbara~A. Weir,
+  Gregory Kryukov, Glenn~S. Cowley, Stanley Gill, William~F. Harrington, Sasha
+  Pantel, John~M. Krill-Burger, Robin~M. Meyers, Levi Ali, Amy Goodale, Yenarae
+  Lee, Guozhi Jiang, Jessica Hsiao, William F.~J. Gerath, Sara Howell, Erin
+  Merkel, Mahmoud Ghandi, Levi~A. Garraway, David~E. Root, Todd~R. Golub,
+  Jesse~S. Boehm, and William~C. Hahn.
+\newblock Defining a cancer dependency map.
+\newblock \emph{Cell}, 170\penalty0 (3):\penalty0 564--576, 2017.
+\newblock \doi{10.1016/j.cell.2017.06.010}.
+
+\bibitem[Turner et~al.(2017)Turner, Deshpande, Beyter, Koga, Rusert, Lee, Li,
+  Arden, Ren, Nathanson, Kornblum, Taylor, Kaushal, Cavenee, Wechsler-Reya,
+  Furnari, Vandenberg, Rao, Wahl, Bafna, and Mischel]{turner_2017_ecdna}
+Kristen~M. Turner, Viraj Deshpande, Doruk Beyter, Tomoyuki Koga, Jessica
+  Rusert, Catherine Lee, Bin Li, Karen Arden, Bing Ren, David~A. Nathanson,
+  Harley~I. Kornblum, Michael~D. Taylor, Sharmeela Kaushal, Webster~K. Cavenee,
+  Robert Wechsler-Reya, Frank~B. Furnari, Scott~R. Vandenberg, P.~Nagesh Rao,
+  Geoffrey~M. Wahl, Vineet Bafna, and Paul~S. Mischel.
+\newblock Extrachromosomal oncogene amplification drives tumour evolution and
+  genetic heterogeneity.
+\newblock \emph{Nature}, 543\penalty0 (7643):\penalty0 122--125, 2017.
+\newblock \doi{10.1038/nature21356}.
+
+\bibitem[Veli{\v{c}}kovi{\'c} et~al.(2018)Veli{\v{c}}kovi{\'c}, Cucurull,
+  Casanova, Romero, Li{\`o}, and Bengio]{velickovic_2018_gat}
+Petar Veli{\v{c}}kovi{\'c}, Guillem Cucurull, Arantxa Casanova, Adriana Romero,
+  Pietro Li{\`o}, and Yoshua Bengio.
+\newblock Graph attention networks.
+\newblock In \emph{International Conference on Learning Representations}, 2018.
+
+\bibitem[Verhaak et~al.(2019)Verhaak, Bafna, and
+  Mischel]{verhaak_2019_ecdna_review}
+Roel G.~W. Verhaak, Vineet Bafna, and Paul~S. Mischel.
+\newblock Extrachromosomal oncogene amplification in tumour pathogenesis and
+  evolution.
+\newblock \emph{Nature Reviews Cancer}, 19\penalty0 (5):\penalty0 283--288,
+  2019.
+\newblock \doi{10.1038/s41568-019-0128-6}.
+
+\bibitem[Wilkinson et~al.(2007)Wilkinson, Odedra, Heaton, Wedge, Keen, Crafter,
+  Foster, Brady, Bigley, Brown, Byth, and Hickson]{wilkinson_2007_aurkb}
+Richard~W. Wilkinson, Rajesh Odedra, Simon~P. Heaton, Stephen~R. Wedge,
+  Nicola~J. Keen, Claire Crafter, John~R. Foster, Marian~C. Brady, Alison
+  Bigley, Elaine Brown, Kate~F. Byth, and Ian Hickson.
+\newblock {AZD1152}, a selective inhibitor of {Aurora B} kinase, inhibits human
+  tumor xenograft growth by inducing apoptosis.
+\newblock \emph{Clinical Cancer Research}, 13\penalty0 (12):\penalty0
+  3682--3688, 2007.
+\newblock \doi{10.1158/1078-0432.CCR-06-2979}.
+
+\bibitem[Yang et~al.(2013)Yang, Soares, Greninger, Edelman, Lightfoot, Forbes,
+  Bindal, Beare, Smith, Thompson, Ramaswamy, Futreal, Haber, Stratton, Benes,
+  McDermott, and Garnett]{gdsc_2013}
+Wanjuan Yang, Jorge Soares, Patricia Greninger, Elena~J. Edelman, Howard
+  Lightfoot, Simon Forbes, Nidhi Bindal, Dave Beare, James~A. Smith, I.~Richard
+  Thompson, Sridhar Ramaswamy, P.~Andrew Futreal, Daniel~A. Haber, Michael~R.
+  Stratton, Cyril Benes, Ultan McDermott, and Mathew~J. Garnett.
+\newblock Genomics of drug sensitivity in cancer ({GDSC}): a resource for
+  therapeutic biomarker discovery in cancer cells.
+\newblock \emph{Nucleic Acids Research}, 41\penalty0 (D1):\penalty0 D955--D961,
+  2013.
+\newblock \doi{10.1093/nar/gks1111}.
+
+\bibitem[Zheng et~al.(2018)Zheng, Aragam, Ravikumar, and
+  Xing]{zheng_2018_notears}
+Xun Zheng, Bryon Aragam, Pradeep Ravikumar, and Eric~P. Xing.
+\newblock {DAGs} with {NO TEARS}: Continuous optimization for structure
+  learning.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~31, 2018.
+
+\bibitem[Zhou et~al.(2019)Zhou, Chen, Yang, Wang, Sun, Zhang, He, and
+  Wu]{zhou_2019_kif11}
+Juan Zhou, Wei-Rong Chen, Li-Chao Yang, Jun Wang, Jia-Yuan Sun, Wen-Wen Zhang,
+  Zhen-Yu He, and San-Gang Wu.
+\newblock {KIF11} functions as an oncogene and is associated with poor outcomes
+  from breast cancer.
+\newblock \emph{Cancer Research and Treatment}, 51\penalty0 (3):\penalty0
+  1207--1221, 2019.
+\newblock \doi{10.4143/crt.2018.460}.
+
+\end{thebibliography}

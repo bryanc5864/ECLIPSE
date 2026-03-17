@@ -1,0 +1,152 @@
+[Title_document] Insert Your Title Here∗
+
+[Subtitle] Insert Subtitle Here
+
+[Authors] 
+
+[Authors] FirstName Surname†
+ Department Name
+ Institution/University Name
+ City State Country
+ email@email.com
+
+[Authors] FirstName Surname
+ Department Name
+ Institution/University Name
+ City State Country
+ email@email.com
+
+[Authors] FirstName Surname
+ Department Name
+ Institution/University Name
+ City State Country
+ email@email.com
+
+[TitleNote] 
+
+[AuthNotes] 
+
+[AbsHead] 
+
+[AbsHead] ABSTRACT
+
+[Abstract] In this sample-structured document, neither the cross-linking of float elements and bibliography nor metadata/copyright information is available. The sample document is provided in “Draft” mode and to view it in the final layout format, applying the required template is essential with some standard steps.
+
+[Abstract] These steps, which should require generation of the final output from the styled paper, are mentioned here in this paragraph. First, users have to run “Reference Numbering” from the “Reference Elements” menu; this is the first step to start the bibliography marking (it should be clicked while keeping the cursor at the beginning of the reference list). After the marking is complete, the reference element runs all the options under the “Cross Linking” menu.
+
+[Abstract] For accuracy check of the structured paper, user can run the option Manuscript Validation. It informs the user of the wrong or missing values in the paper. The user must correct the paper as per validation messages and rerun Manuscript Validation.
+
+[Abstract] Now, to generate the required layout of the paper, the user should select one of the template styles under the Define Template Style option (choose the required layout design, i.e. choose between Journals and Proceedings).
+
+[footnote text] ∗Article Title Footnote needs to be captured as Title Note
+
+[footnote text] †Author Footnote to be captured as Author Note
+
+[PermissionBlock] Permission to make digital or hard copies of part or all of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for third-party components of this work must be honored. For all other uses, contact the owner/author(s).
+
+[Verso_(LRH)] WOODSTOCK’18, June, 2018, El Paso, Texas USA
+
+[PermissionBlock] © 2018 Copyright held by the owner/author(s). 978-1-4503-0000-0/2005/06
+
+[Normal] https://doi.org/10.1145/1234567890
+
+[Abstract] Some specific values are required to create a standard layout by choosing a template for the journals or proceedings. So once the user chooses one of the template layout styles, the respective Journal or Conference details dialog box (i.e. journal/conference acronym, DOI, ISBN, copyright, year, etc.) will appear as a prompt during the Define Template Style functionality. The user should fill these values, after which the template creates the desired layout of the paper. The user can now create a PDF of his/her manuscript using the “Save as PDF” option.
+
+[Abstract] If the user is adding any new data, they should make sure to style it as per the instructions provided in previous sections. Carry out the steps for Cross-linking, Fundref data, adding Document History (specific to journal submission), and finally, Manuscript validation and placing the respective metadata (Bibstrip/copyright text) while applying the required template.
+
+[CCSHead] CCS CONCEPTS
+
+[CCSDescription] • Insert CCS text here • Insert CCS text here   • Insert CCS text here
+
+[KeyWordHead] KEYWORDS
+
+[KeyWords] Insert keyword text, Insert keyword text, Insert keyword text, Insert keyword text
+
+[RefFormatHead] ACM Reference format:
+
+[RefFormatPara] FirstName Surname, FirstName Surname and FirstName Surname. 2018. Insert Your Title Here: Insert Subtitle Here. In Proceedings of ACM Woodstock conference (WOODSTOCK’18). ACM, New York, NY, USA, 2 pages. https://doi.org/10.1145/1234567890
+
+[Head1] 1 Insert Heading Level 1
+
+[Para] The updated template, user manuals, samples, and required fonts, all are available at the URL https://www.acm.org/publications/proceedings-template. It contains said information for all three versions of MS Word (Windows and 2 versions of Mac). There are also separate links to the user guide, which can be referred to by the user. This URL also contains some useful video links, which describe how to add the template, structure the paper, and generate the layout, in different clips. Display Formula with Number
+
+[DisplayFormula] 	 	(1)
+
+[ParaContinue] Continuation part of Paragraph Text The user must style this paragraph in ParaContinue style, which follows immediately after the DisplayFormula (numbered equation). The DisplayFormula style is applied only in case of a numbered equation. A numbered equation always has a number to its right. Insert paragraph text here. Display Formula without Number
+
+[DisplayFormulaUnnum] 
+
+[Para] The DisplayFormulaUnnum style is applied only in case of an unnumbered equation. An unnumbered display equation never contains an equation number to its right, and this unique property distinguishes it from a numbered equation.
+
+[Image] 
+
+[FigureCaption] Figure 1: Figure Caption and Image above the caption [In draft mode, Image will not appear on the screen]
+
+[Statements] Theorem/Proof/Lemma. Insert text here for the enunciation or Math statement. Insert text here for the enunciation or Math statement. Insert text here for the enunciation or Math statement. Insert text here for the enunciation or Math statement. Insert text here for the enunciation or Math statement.
+
+[Extract] ....Insert text here for the Quotation or Extract, Insert text here for the Quotation or Extract, Insert text here for the Quotation or Extract, Insert text here for the Quotation or Extract, Insert text here for the Quotation or Extract, Insert text here for the Quotation or Extract.
+
+[Head2] 1.1 Heading Level 2
+
+[Para] In the below paragraph, it is explained how alt-txt value is placed in MS Word 2010. To add alternative text to a picture in Word 2010, follow these steps:
+
+[List Paragraph] In a Word 2010 document, insert a picture.
+
+[List Paragraph] Right click on the inserted picture and select the Format Picture option.
+
+[List Paragraph] Select the Alt Txt option from the left-side panel options.
+
+[List Paragraph] In the "Title:" and "Description:" text boxes, type the text you want to represent the picture, and then click "Close".
+
+[Para] Below are steps to place alt-txt value in MS Word 2013/2016. To add alternative text to a picture in Word 2013/2016, follow these steps:
+
+[List Paragraph] In a Word 2013/2016 document, insert a picture.
+
+[List Paragraph] Right click on the inserted picture and select the Format Picture option.
+
+[List Paragraph] In the settings at the right side of the window, click on the "Layout & Properties" icon (3rd option). 
+
+[List Paragraph] Expand Alt Txt option.
+
+[List Paragraph] In the "Title:" and "Description:" text boxes, type the text you want to represent the picture, and then click "Close".
+
+[Para] 1.1.1 Heading Level 3. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here.
+
+[Para] 1.1.1.1 Heading Level 4. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here.
+
+[AckHead] ACKNOWLEDGMENTS
+
+[AckPara] Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here. Insert paragraph text here.
+
+[ReferenceHead] REFERENCES
+
+[Bib_entry] [1]	Patricia S. Abril and Robert Plant, 2007. The patent holder's dilemma: Buy, sell, or troll? Commun. ACM 50, 1 (Jan, 2007), 36-44. DOI: https://doi.org/10.1145/1188913.1188915.
+
+[Bib_entry] [2]	Sten Andler. 1979. Predicate path expressions. In Proceedings of the 6th. ACM SIGACT-SIGPLAN Symposium on Principles of Programming Languages (POPL '79). ACM Press, New York, NY, 226-236. DOI:https://doi.org/10.1145/567752.567774
+
+[Bib_entry]  [3]	Ian Editor (Ed.). 2007. The title of book one (1st. ed.). The name of the series one, Vol. 9. University of Chicago Press, Chicago. DOI:https://doi.org/10.1007/3-540-09237-4.
+
+[Bib_entry] [4]	David Kosiur. 2001. Understanding Policy-Based Networking (2nd. ed.). Wiley, New York, NY..
+
+[MetadataHead] Conference Name:ACM Woodstock conference
+
+[MetadataHead] Conference Short Name:WOODSTOCK’18
+
+[MetadataHead] Conference Location:El Paso, Texas USA
+
+[MetadataHead] ISBN:978-1-4503-0000-0/18/06
+
+[MetadataHead] Year:2018
+
+[MetadataHead] Date:June
+
+[MetadataHead] Copyright Year:2018
+
+[MetadataHead] Copyright Statement:rightsretained
+
+[MetadataHead] DOI:10.1145/1234567890
+
+[MetadataHead] RRH: F. Surname et al.
+
+[MetadataHead] Price:$15.00
+

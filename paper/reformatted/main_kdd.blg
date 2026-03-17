@@ -1,0 +1,82 @@
+This is BibTeX, Version 0.99e
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main_kdd.aux
+Reallocating 'name_of_file' (item size: 1) to 21 items.
+The style file: ACM-Reference-Format.bst
+Reallocating 'name_of_file' (item size: 1) to 11 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'wiz_functions' (item size: 4) to 6000 items.
+Database file #1: references.bib
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Reallocating 'wiz_functions' (item size: 4) to 9000 items.
+Reallocating 'glb_str_end' (item size: 4) to 20 items.
+Reallocating 'glb_str_ptr' (item size: 4) to 20 items.
+Reallocating 'global_strs' (item size: 1) to 4000000 items.
+Reallocating 'singl_function' (item size: 4) to 100 items.
+Warning--no number and no volume in arjovsky_2019_irm
+Warning--page numbers missing in both pages and numpages fields in arjovsky_2019_irm
+Warning--empty publisher in chen_2018_neuralode
+Warning--empty address in chen_2018_neuralode
+Warning--page numbers missing in both pages and numpages fields in chen_2018_neuralode
+Warning--empty publisher in cho_2014_gru
+Warning--empty address in cho_2014_gru
+Warning--no number and no volume in depmap_2023
+Warning--page numbers missing in both pages and numpages fields in depmap_2023
+Warning--empty publisher in jaegle_2021_perceiver
+Warning--empty address in jaegle_2021_perceiver
+Warning--empty publisher in li_2020_neuralsde
+Warning--empty address in li_2020_neuralsde
+Warning--empty publisher in lin_2017_focal
+Warning--empty address in lin_2017_focal
+Warning--empty publisher in rosenfeld_2021_irm_risks
+Warning--empty address in rosenfeld_2021_irm_risks
+Warning--page numbers missing in both pages and numpages fields in rosenfeld_2021_irm_risks
+Warning--empty publisher in velickovic_2018_gat
+Warning--empty address in velickovic_2018_gat
+Warning--page numbers missing in both pages and numpages fields in velickovic_2018_gat
+Warning--empty publisher in zheng_2018_notears
+Warning--empty address in zheng_2018_notears
+Warning--page numbers missing in both pages and numpages fields in zheng_2018_notears
+You've used 36 entries,
+            6273 wiz_defined-function locations,
+            1753 strings with 30701 characters,
+and the built_in function-call counts, 56919 in all, are:
+= -- 7455
+> -- 3320
+< -- 0
++ -- 1192
+- -- 1162
+* -- 5190
+:= -- 6226
+add.period$ -- 176
+call.type$ -- 36
+change.case$ -- 525
+chr.to.int$ -- 36
+cite$ -- 60
+duplicate$ -- 3791
+empty$ -- 2657
+format.name$ -- 1298
+if$ -- 13636
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 152
+newline$ -- 346
+num.names$ -- 252
+pop$ -- 1632
+preamble$ -- 1
+purify$ -- 813
+quote$ -- 0
+skip$ -- 1338
+stack$ -- 0
+substring$ -- 3547
+swap$ -- 422
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 688
+warning$ -- 24
+while$ -- 204
+width$ -- 0
+write$ -- 737
+(There were 24 warnings)

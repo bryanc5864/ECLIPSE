@@ -1,0 +1,615 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{36}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{} and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showURL}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showURL #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[{4D Nucleome Consortium}(2017)]%
+        {4dn_2017}
+\bibfield{author}{\bibinfo{person}{{4D Nucleome Consortium}}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{The {4D} nucleome project}.
+\newblock \bibinfo{journal}{\emph{Nature}} \bibinfo{volume}{549},
+  \bibinfo{number}{7671} (\bibinfo{year}{2017}), \bibinfo{pages}{219--226}.
+\newblock
+\href{https://doi.org/10.1038/nature23884}{doi:\nolinkurl{10.1038/nature23884}}
+
+
+\bibitem[Arjovsky et~al\mbox{.}(2019)]%
+        {arjovsky_2019_irm}
+\bibfield{author}{\bibinfo{person}{Martin Arjovsky}, \bibinfo{person}{L{\'e}on
+  Bottou}, \bibinfo{person}{Ishaan Gulrajani}, {and} \bibinfo{person}{David
+  Lopez-Paz}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Invariant Risk Minimization}.
+\newblock \bibinfo{journal}{\emph{arXiv preprint arXiv:1907.02893}}
+  (\bibinfo{year}{2019}).
+\newblock
+
+
+\bibitem[Behan et~al\mbox{.}(2019)]%
+        {behan_2019_prioritization}
+\bibfield{author}{\bibinfo{person}{Fiona~M. Behan}, \bibinfo{person}{Francesco
+  Iorio}, \bibinfo{person}{Gabriele Picco}, \bibinfo{person}{Emanuel
+  Gon{\c{c}}alves}, \bibinfo{person}{Charlotte~M. Beaver},
+  \bibinfo{person}{Giorgia Migliardi}, \bibinfo{person}{Rita Santos},
+  \bibinfo{person}{Yanhua Ber}, \bibinfo{person}{Francesco Sasber},
+  \bibinfo{person}{Mathew Baber}, \bibinfo{person}{Howard Carber},
+  \bibinfo{person}{Howard Lightfoot}, \bibinfo{person}{Elizabeth~A. Coker},
+  \bibinfo{person}{Wanjuan Yang}, \bibinfo{person}{Alexandra Butler},
+  \bibinfo{person}{Gordon Stamp}, \bibinfo{person}{Dean Roberts},
+  \bibinfo{person}{Marc Perry}, \bibinfo{person}{Ian Garner},
+  \bibinfo{person}{Minal Sharma}, \bibinfo{person}{Michael Howell},
+  \bibinfo{person}{Andrew~R. Leach}, \bibinfo{person}{Francesco Iorio},
+  \bibinfo{person}{Nicolas Thomson}, {and} \bibinfo{person}{Mathew~J.
+  Garnett}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Prioritization of cancer therapeutic targets using
+  {CRISPR}--{Cas9} screens}.
+\newblock \bibinfo{journal}{\emph{Nature}} \bibinfo{volume}{568},
+  \bibinfo{number}{7753} (\bibinfo{year}{2019}), \bibinfo{pages}{511--516}.
+\newblock
+\href{https://doi.org/10.1038/s41586-019-1103-9}{doi:\nolinkurl{10.1038/s41586-019-1103-9}}
+
+
+\bibitem[Chen et~al\mbox{.}(2018)]%
+        {chen_2018_neuralode}
+\bibfield{author}{\bibinfo{person}{Ricky T.~Q. Chen}, \bibinfo{person}{Yulia
+  Rubanova}, \bibinfo{person}{Jesse Bettencourt}, {and} \bibinfo{person}{David
+  Duvenaud}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Neural Ordinary Differential Equations}. In
+  \bibinfo{booktitle}{\emph{Advances in Neural Information Processing
+  Systems}}, Vol.~\bibinfo{volume}{31}.
+\newblock
+
+
+\bibitem[Cho et~al\mbox{.}(2014)]%
+        {cho_2014_gru}
+\bibfield{author}{\bibinfo{person}{Kyunghyun Cho}, \bibinfo{person}{Bart van
+  Merrienboer}, \bibinfo{person}{Caglar Gulcehre}, \bibinfo{person}{Dzmitry
+  Bahdanau}, \bibinfo{person}{Fethi Bougares}, \bibinfo{person}{Holger
+  Schwenk}, {and} \bibinfo{person}{Yoshua Bengio}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Learning Phrase Representations using {RNN}
+  Encoder-Decoder for Statistical Machine Translation}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the Conference on Empirical Methods
+  in Natural Language Processing}}. \bibinfo{pages}{1724--1734}.
+\newblock
+
+
+\bibitem[{DepMap, Broad}(2023)]%
+        {depmap_2023}
+\bibfield{author}{\bibinfo{person}{{DepMap, Broad}}.}
+  \bibinfo{year}{2023}\natexlab{}.
+\newblock \showarticletitle{{DepMap} 23Q2 Public}.
+\newblock \bibinfo{journal}{\emph{figshare}} (\bibinfo{year}{2023}).
+\newblock
+\href{https://doi.org/10.6084/m9.figshare.22765112.v2}{doi:\nolinkurl{10.6084/m9.figshare.22765112.v2}}
+
+
+\bibitem[Deshpande et~al\mbox{.}(2019)]%
+        {deshpande_2019_amplicon}
+\bibfield{author}{\bibinfo{person}{Viraj Deshpande}, \bibinfo{person}{Jens
+  Luebeck}, \bibinfo{person}{Nam-Phuong~D. Nguyen}, \bibinfo{person}{Mehrdad
+  Bakhtiari}, \bibinfo{person}{Kristen~M. Turner}, \bibinfo{person}{Richard
+  Schwab}, \bibinfo{person}{Hannah Carter}, \bibinfo{person}{Paul~S. Mischel},
+  {and} \bibinfo{person}{Vineet Bafna}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Exploring the landscape of focal amplifications in
+  cancer using {AmpliconArchitect}}.
+\newblock \bibinfo{journal}{\emph{Nature Communications}} \bibinfo{volume}{10},
+  \bibinfo{number}{1} (\bibinfo{year}{2019}), \bibinfo{pages}{392}.
+\newblock
+\href{https://doi.org/10.1038/s41467-018-08200-y}{doi:\nolinkurl{10.1038/s41467-018-08200-y}}
+
+
+\bibitem[Gutteridge et~al\mbox{.}(2016)]%
+        {gutteridge_2016_plk1}
+\bibfield{author}{\bibinfo{person}{Rebecca E.~A. Gutteridge},
+  \bibinfo{person}{Michelle~A. Ndiaye}, \bibinfo{person}{Xiaoqing Liu}, {and}
+  \bibinfo{person}{Nihal Ahmad}.} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Plk1 Inhibitors in Cancer Therapy: From Laboratory
+  to Clinics}.
+\newblock \bibinfo{journal}{\emph{Molecular Cancer Therapeutics}}
+  \bibinfo{volume}{15}, \bibinfo{number}{7} (\bibinfo{year}{2016}),
+  \bibinfo{pages}{1427--1435}.
+\newblock
+\href{https://doi.org/10.1158/1535-7163.MCT-15-0897}{doi:\nolinkurl{10.1158/1535-7163.MCT-15-0897}}
+
+
+\bibitem[Hung et~al\mbox{.}(2021)]%
+        {hung_2021_ecdna_hubs}
+\bibfield{author}{\bibinfo{person}{King~L. Hung}, \bibinfo{person}{Kathryn~E.
+  Yost}, \bibinfo{person}{Liangqi Xie}, \bibinfo{person}{Quanming Shi},
+  \bibinfo{person}{Konstantin Helmsauer}, \bibinfo{person}{Jens Luebeck},
+  \bibinfo{person}{Robert Sch{\"o}pflin}, \bibinfo{person}{Jake~T. Lange},
+  \bibinfo{person}{Rocio Chamorro~Gonz{\'a}lez}, \bibinfo{person}{Natasha~E.
+  Weiser}, \bibinfo{person}{Celine Chen}, \bibinfo{person}{Maria~D.
+  Alarc{\'o}n}, \bibinfo{person}{Siavash Wittmann}, \bibinfo{person}{Anindya
+  Dutta}, \bibinfo{person}{Anton~G. Henssen}, \bibinfo{person}{Howard~Y.
+  Chang}, {and} \bibinfo{person}{Paul~S. Mischel}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{ec{DNA} hubs drive cooperative intermolecular
+  oncogene expression}.
+\newblock \bibinfo{journal}{\emph{Nature}} \bibinfo{volume}{600},
+  \bibinfo{number}{7890} (\bibinfo{year}{2021}), \bibinfo{pages}{731--736}.
+\newblock
+\href{https://doi.org/10.1038/s41586-021-04116-8}{doi:\nolinkurl{10.1038/s41586-021-04116-8}}
+
+
+\bibitem[Jaegle et~al\mbox{.}(2021)]%
+        {jaegle_2021_perceiver}
+\bibfield{author}{\bibinfo{person}{Andrew Jaegle}, \bibinfo{person}{Felix
+  Gimeno}, \bibinfo{person}{Andrew Brock}, \bibinfo{person}{Andrew Zisserman},
+  \bibinfo{person}{Oriol Vinyals}, {and} \bibinfo{person}{Joao Carreira}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Perceiver: General Perception with Iterative
+  Attention}. In \bibinfo{booktitle}{\emph{International Conference on Machine
+  Learning}}. \bibinfo{pages}{4651--4664}.
+\newblock
+
+
+\bibitem[Kim et~al\mbox{.}(2020)]%
+        {kim_2020_ecdna_prognosis}
+\bibfield{author}{\bibinfo{person}{Hoon Kim}, \bibinfo{person}{Nam-Phuong
+  Nguyen}, \bibinfo{person}{Kristen Turner}, \bibinfo{person}{Sihan Wu},
+  \bibinfo{person}{Aaron~David Guber}, \bibinfo{person}{Jens Luebeck},
+  \bibinfo{person}{Utkrisht Rajkumar}, \bibinfo{person}{Paulina Nber},
+  \bibinfo{person}{Yarui Dber}, \bibinfo{person}{Roel G.~W. Verhaak},
+  \bibinfo{person}{Paul~S. Mischel}, {and} \bibinfo{person}{Vineet Bafna}.}
+  \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Extrachromosomal {DNA} is associated with oncogene
+  amplification and poor outcome across multiple cancers}.
+\newblock \bibinfo{journal}{\emph{Nature Genetics}} \bibinfo{volume}{52},
+  \bibinfo{number}{9} (\bibinfo{year}{2020}), \bibinfo{pages}{891--897}.
+\newblock
+\href{https://doi.org/10.1038/s41588-020-0678-2}{doi:\nolinkurl{10.1038/s41588-020-0678-2}}
+
+
+\bibitem[Lange et~al\mbox{.}(2022)]%
+        {lange_2022_mathematical}
+\bibfield{author}{\bibinfo{person}{Jake~T. Lange}, \bibinfo{person}{John~C.
+  Rose}, \bibinfo{person}{Celine~Y. Chen}, \bibinfo{person}{Yaniv Pichugin},
+  \bibinfo{person}{Liangqi Xie}, \bibinfo{person}{Jun Tang},
+  \bibinfo{person}{King~L. Hung}, \bibinfo{person}{Kathryn~E. Yost},
+  \bibinfo{person}{Quanming Shi}, \bibinfo{person}{Miriam~L. Erb},
+  \bibinfo{person}{Utkrisht Rajkumar}, \bibinfo{person}{Sihan Wu},
+  \bibinfo{person}{Sabine Taschner-Mandl}, \bibinfo{person}{Marie Bernkopf},
+  \bibinfo{person}{Zhe Liu}, \bibinfo{person}{Weini Huang},
+  \bibinfo{person}{Howard~Y. Chang}, \bibinfo{person}{Vineet Bafna},
+  \bibinfo{person}{Anton~G. Henssen}, \bibinfo{person}{Benjamin Werner}, {and}
+  \bibinfo{person}{Paul~S. Mischel}.} \bibinfo{year}{2022}\natexlab{}.
+\newblock \showarticletitle{The evolutionary dynamics of extrachromosomal {DNA}
+  in human cancers}.
+\newblock \bibinfo{journal}{\emph{Nature Genetics}} \bibinfo{volume}{54},
+  \bibinfo{number}{10} (\bibinfo{year}{2022}), \bibinfo{pages}{1527--1533}.
+\newblock
+\href{https://doi.org/10.1038/s41588-022-01177-x}{doi:\nolinkurl{10.1038/s41588-022-01177-x}}
+
+
+\bibitem[Li et~al\mbox{.}(2020)]%
+        {li_2020_neuralsde}
+\bibfield{author}{\bibinfo{person}{Xuechen Li},
+  \bibinfo{person}{Ting-Kam~Leonard Wong}, \bibinfo{person}{Ricky T.~Q. Chen},
+  {and} \bibinfo{person}{David Duvenaud}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{Scalable Gradients for Stochastic Differential
+  Equations}. In \bibinfo{booktitle}{\emph{Proceedings of the International
+  Conference on Artificial Intelligence and Statistics}}.
+  \bibinfo{pages}{3870--3882}.
+\newblock
+
+
+\bibitem[Lin et~al\mbox{.}(2017)]%
+        {lin_2017_focal}
+\bibfield{author}{\bibinfo{person}{Tsung-Yi Lin}, \bibinfo{person}{Priya
+  Goyal}, \bibinfo{person}{Ross Girshick}, \bibinfo{person}{Kaiming He}, {and}
+  \bibinfo{person}{Piotr Doll{\'a}r}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Focal Loss for Dense Object Detection}. In
+  \bibinfo{booktitle}{\emph{Proceedings of the IEEE International Conference on
+  Computer Vision}}. \bibinfo{pages}{2980--2988}.
+\newblock
+
+
+\bibitem[Luebeck et~al\mbox{.}(2020)]%
+        {kim_2020_amplicon_repo}
+\bibfield{author}{\bibinfo{person}{Jens Luebeck}, \bibinfo{person}{Ceyda
+  Corber}, \bibinfo{person}{Alvin W.~T. Ng}, \bibinfo{person}{Owen Bber},
+  \bibinfo{person}{Kristen~M. Turner}, \bibinfo{person}{Viraj Deshpande},
+  \bibinfo{person}{Utkrisht Rajkumar}, \bibinfo{person}{Nam-Phuong~D. Nguyen},
+  \bibinfo{person}{Paulina Nber}, \bibinfo{person}{Roel G.~W. Verhaak},
+  \bibinfo{person}{Paul~S. Mischel}, {and} \bibinfo{person}{Vineet Bafna}.}
+  \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{{AmpliconRepository}: a resource for cancer
+  amplicon analysis}.
+\newblock \bibinfo{journal}{\emph{Bioinformatics}} \bibinfo{volume}{36},
+  \bibinfo{number}{13} (\bibinfo{year}{2020}), \bibinfo{pages}{4053--4054}.
+\newblock
+\href{https://doi.org/10.1093/bioinformatics/btaa219}{doi:\nolinkurl{10.1093/bioinformatics/btaa219}}
+
+
+\bibitem[Macheret et~al\mbox{.}(2020)]%
+        {macheret_2020_replication}
+\bibfield{author}{\bibinfo{person}{Morgane Macheret}, \bibinfo{person}{Rahul
+  Bhowmick}, \bibinfo{person}{Katarzyna Sobkowiak}, \bibinfo{person}{Lynn
+  Mahber}, \bibinfo{person}{Ian~D. Hickson}, {and} \bibinfo{person}{Thanos~D.
+  Halazonetis}.} \bibinfo{year}{2020}\natexlab{}.
+\newblock \showarticletitle{High-resolution mapping of mitotic {DNA} synthesis
+  regions and common fragile sites in the human genome through direct
+  sequencing}.
+\newblock \bibinfo{journal}{\emph{Cell Research}} \bibinfo{volume}{30},
+  \bibinfo{number}{11} (\bibinfo{year}{2020}), \bibinfo{pages}{997--1008}.
+\newblock
+\href{https://doi.org/10.1038/s41422-020-0358-x}{doi:\nolinkurl{10.1038/s41422-020-0358-x}}
+
+
+\bibitem[Meyers et~al\mbox{.}(2017)]%
+        {meyers_2017_ceres}
+\bibfield{author}{\bibinfo{person}{Robin~M. Meyers}, \bibinfo{person}{Jordan~G.
+  Bryan}, \bibinfo{person}{James~M. McFarland}, \bibinfo{person}{Barbara~A.
+  Weir}, \bibinfo{person}{Ann~E. Sizemore}, \bibinfo{person}{Han Xu},
+  \bibinfo{person}{Neekesh~V. Dharia}, \bibinfo{person}{Phillip~G. Montgomery},
+  \bibinfo{person}{Glenn~S. Cowley}, \bibinfo{person}{Sasha Pantel},
+  \bibinfo{person}{Amy Goodale}, \bibinfo{person}{Yenarae Lee},
+  \bibinfo{person}{Levi~D. Ali}, \bibinfo{person}{Guozhi Jiang},
+  \bibinfo{person}{Rakela Luber}, \bibinfo{person}{Aviad Tsherniak},
+  \bibinfo{person}{William~C. Hahn}, \bibinfo{person}{David~E. Root}, {and}
+  \bibinfo{person}{Todd~R. Golub}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Computational correction of copy number effect
+  improves specificity of {CRISPR}--{Cas9} essentiality screens in cancer
+  cells}.
+\newblock \bibinfo{journal}{\emph{Nature Genetics}} \bibinfo{volume}{49},
+  \bibinfo{number}{12} (\bibinfo{year}{2017}), \bibinfo{pages}{1779--1784}.
+\newblock
+\href{https://doi.org/10.1038/ng.3984}{doi:\nolinkurl{10.1038/ng.3984}}
+
+
+\bibitem[Nathanson et~al\mbox{.}(2014)]%
+        {nathanson_2014_targeted}
+\bibfield{author}{\bibinfo{person}{David~A. Nathanson},
+  \bibinfo{person}{Beatrice Gini}, \bibinfo{person}{Jack Mottahedeh},
+  \bibinfo{person}{Koppany Visnyei}, \bibinfo{person}{Tomoyuki Koga},
+  \bibinfo{person}{German Gomez}, \bibinfo{person}{Ascia Eskin},
+  \bibinfo{person}{Kiwook Hwang}, \bibinfo{person}{Jun Wang},
+  \bibinfo{person}{Kenta Masui}, \bibinfo{person}{Andres Paucar},
+  \bibinfo{person}{Huijun Yang}, \bibinfo{person}{Minori Ohashi},
+  \bibinfo{person}{Shaojun Zhu}, \bibinfo{person}{Jill Wykosky},
+  \bibinfo{person}{Rachel Reed}, \bibinfo{person}{Stanley~F. Nelson},
+  \bibinfo{person}{Timothy~F. Cloughesy}, \bibinfo{person}{C.~David James},
+  \bibinfo{person}{P.~Nagesh Rao}, \bibinfo{person}{Harley~I. Kornblum},
+  \bibinfo{person}{James~R. Heath}, \bibinfo{person}{Webster~K. Cavenee},
+  \bibinfo{person}{Frank~B. Furnari}, {and} \bibinfo{person}{Paul~S. Mischel}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Targeted therapy resistance mediated by dynamic
+  regulation of extrachromosomal mutant {EGFR} {DNA}}.
+\newblock \bibinfo{journal}{\emph{Science}} \bibinfo{volume}{343},
+  \bibinfo{number}{6166} (\bibinfo{year}{2014}), \bibinfo{pages}{72--76}.
+\newblock
+\href{https://doi.org/10.1126/science.1241328}{doi:\nolinkurl{10.1126/science.1241328}}
+
+
+\bibitem[O'Leary et~al\mbox{.}(2016)]%
+        {refseq_2016}
+\bibfield{author}{\bibinfo{person}{Nuala~A. O'Leary},
+  \bibinfo{person}{Mathew~W. Wright}, \bibinfo{person}{J.~Rodney Brister},
+  {et~al\mbox{.}}} \bibinfo{year}{2016}\natexlab{}.
+\newblock \showarticletitle{Reference sequence ({RefSeq}) database at {NCBI}:
+  current status, taxonomic expansion, and functional annotation}.
+\newblock \bibinfo{journal}{\emph{Nucleic Acids Research}}
+  \bibinfo{volume}{44}, \bibinfo{number}{D1} (\bibinfo{year}{2016}),
+  \bibinfo{pages}{D733--D745}.
+\newblock
+\href{https://doi.org/10.1093/nar/gkv1189}{doi:\nolinkurl{10.1093/nar/gkv1189}}
+
+
+\bibitem[Otto and Sicinski(2017)]%
+        {otto_2017_cell_cycle}
+\bibfield{author}{\bibinfo{person}{Tobias Otto} {and} \bibinfo{person}{Piotr
+  Sicinski}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Cell cycle proteins as promising targets in cancer
+  therapy}.
+\newblock \bibinfo{journal}{\emph{Nature Reviews Cancer}} \bibinfo{volume}{17},
+  \bibinfo{number}{2} (\bibinfo{year}{2017}), \bibinfo{pages}{93--115}.
+\newblock
+\href{https://doi.org/10.1038/nrc.2016.138}{doi:\nolinkurl{10.1038/nrc.2016.138}}
+
+
+\bibitem[Pacini et~al\mbox{.}(2021)]%
+        {deepdep_2021}
+\bibfield{author}{\bibinfo{person}{Clare Pacini}, \bibinfo{person}{Joshua~M.
+  Dempster}, \bibinfo{person}{Irene Boyle}, \bibinfo{person}{Emanuel
+  Goncalves}, \bibinfo{person}{Hanna Najgebauer}, \bibinfo{person}{Emre Kaber},
+  \bibinfo{person}{Patricia~F. Thaben}, \bibinfo{person}{Gabriele Picco},
+  \bibinfo{person}{Daria Lennze}, \bibinfo{person}{Kiyotaka Sato},
+  \bibinfo{person}{Aviad Tsherniak}, {and} \bibinfo{person}{Francesco Iorio}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Integrated cross-study datasets of genetic
+  dependencies in cancer}.
+\newblock \bibinfo{journal}{\emph{Nature Communications}} \bibinfo{volume}{12},
+  \bibinfo{number}{1} (\bibinfo{year}{2021}), \bibinfo{pages}{1661}.
+\newblock
+\href{https://doi.org/10.1038/s41467-021-21898-7}{doi:\nolinkurl{10.1038/s41467-021-21898-7}}
+
+
+\bibitem[Rajkumar et~al\mbox{.}(2024)]%
+        {cytocelldb_2024}
+\bibfield{author}{\bibinfo{person}{Utkrisht Rajkumar}, \bibinfo{person}{Liangqi
+  Xie}, \bibinfo{person}{Jens Luebeck}, \bibinfo{person}{Viraj Deshpande},
+  \bibinfo{person}{Manmohan Chandrasekaran}, \bibinfo{person}{Paul~S. Mischel},
+  {and} \bibinfo{person}{Vineet Bafna}.} \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{{CytoCellDB}: a comprehensive resource for
+  exploring extrachromosomal {DNA} in cancer cell lines}.
+\newblock \bibinfo{journal}{\emph{NAR Cancer}} \bibinfo{volume}{6},
+  \bibinfo{number}{3} (\bibinfo{year}{2024}), \bibinfo{pages}{zcae035}.
+\newblock
+\href{https://doi.org/10.1093/narcan/zcae035}{doi:\nolinkurl{10.1093/narcan/zcae035}}
+
+
+\bibitem[Rosenfeld et~al\mbox{.}(2021)]%
+        {rosenfeld_2021_irm_risks}
+\bibfield{author}{\bibinfo{person}{Elan Rosenfeld}, \bibinfo{person}{Pradeep
+  Ravikumar}, {and} \bibinfo{person}{Andrej Risteski}.}
+  \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{The Risks of Invariant Risk Minimization}. In
+  \bibinfo{booktitle}{\emph{International Conference on Learning
+  Representations}}.
+\newblock
+
+
+\bibitem[Shen et~al\mbox{.}(2019)]%
+        {shen_2019_atr}
+\bibfield{author}{\bibinfo{person}{Jian Shen}, \bibinfo{person}{Wei Zhao},
+  \bibinfo{person}{Zhongbo Ju}, \bibinfo{person}{Lingyan Wang},
+  \bibinfo{person}{Yi Peng}, \bibinfo{person}{Marilyne Labrie},
+  \bibinfo{person}{Timothy~A. Yap}, \bibinfo{person}{Gordon~B. Mills}, {and}
+  \bibinfo{person}{Gang Peng}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{{PARPi} Triggers the {STING}-Dependent Immune
+  Response and Enhances the Therapeutic Efficacy of Immune Checkpoint Blockade
+  Independent of {BRCAness}}.
+\newblock \bibinfo{journal}{\emph{Cancer Research}} \bibinfo{volume}{79},
+  \bibinfo{number}{2} (\bibinfo{year}{2019}), \bibinfo{pages}{311--319}.
+\newblock
+\href{https://doi.org/10.1158/0008-5472.CAN-18-1003}{doi:\nolinkurl{10.1158/0008-5472.CAN-18-1003}}
+
+
+\bibitem[Shoshani et~al\mbox{.}(2021)]%
+        {shoshani_2021_chromothripsis}
+\bibfield{author}{\bibinfo{person}{Ofer Shoshani}, \bibinfo{person}{Simon~F.
+  Brunner}, \bibinfo{person}{Rona Yaeger}, \bibinfo{person}{Peter Ly},
+  \bibinfo{person}{Yael Nechemia-Arbely}, \bibinfo{person}{Dong~Hyun Kim},
+  \bibinfo{person}{Rui Fang}, \bibinfo{person}{Guillaume~A. Castillon},
+  \bibinfo{person}{Miao Yu}, \bibinfo{person}{Julia S.~Z. Li},
+  \bibinfo{person}{Yanwen Sun}, \bibinfo{person}{Mark~H. Bhber},
+  \bibinfo{person}{Rishika Bhargava}, \bibinfo{person}{Sandra Bber},
+  \bibinfo{person}{Arnav Bhattacharya}, \bibinfo{person}{Aaron~D. Viny},
+  \bibinfo{person}{Bailey Boehler}, \bibinfo{person}{Nicholas~D. Nber},
+  \bibinfo{person}{Ekaterina Kamynina}, \bibinfo{person}{Justin~Y. Wong},
+  \bibinfo{person}{Carolyn~R. Bertozzi}, \bibinfo{person}{Saurabh Bhowmick},
+  {and} \bibinfo{person}{Don~W. Cleveland}.} \bibinfo{year}{2021}\natexlab{}.
+\newblock \showarticletitle{Chromothripsis drives the evolution of gene
+  amplification in cancer}.
+\newblock \bibinfo{journal}{\emph{Nature}} \bibinfo{volume}{591},
+  \bibinfo{number}{7848} (\bibinfo{year}{2021}), \bibinfo{pages}{137--141}.
+\newblock
+\href{https://doi.org/10.1038/s41586-020-03064-z}{doi:\nolinkurl{10.1038/s41586-020-03064-z}}
+
+
+\bibitem[Subramanian et~al\mbox{.}(2005)]%
+        {subramanian_2005_gsea}
+\bibfield{author}{\bibinfo{person}{Aravind Subramanian}, \bibinfo{person}{Pablo
+  Tamayo}, \bibinfo{person}{Vamsi~K. Mootha}, \bibinfo{person}{Sayan
+  Mukherjee}, \bibinfo{person}{Benjamin~L. Ebert}, \bibinfo{person}{Michael~A.
+  Gillette}, \bibinfo{person}{Amanda Paulovich}, \bibinfo{person}{Scott~L.
+  Pomeroy}, \bibinfo{person}{Todd~R. Golub}, \bibinfo{person}{Eric~S. Lander},
+  {and} \bibinfo{person}{Jill~P. Mesirov}.} \bibinfo{year}{2005}\natexlab{}.
+\newblock \showarticletitle{Gene set enrichment analysis: a knowledge-based
+  approach for interpreting genome-wide expression profiles}.
+\newblock \bibinfo{journal}{\emph{Proceedings of the National Academy of
+  Sciences}} \bibinfo{volume}{102}, \bibinfo{number}{43}
+  (\bibinfo{year}{2005}), \bibinfo{pages}{15545--15550}.
+\newblock
+\href{https://doi.org/10.1073/pnas.0506580102}{doi:\nolinkurl{10.1073/pnas.0506580102}}
+
+
+\bibitem[Tate et~al\mbox{.}(2019)]%
+        {cosmic_2019}
+\bibfield{author}{\bibinfo{person}{John~G. Tate}, \bibinfo{person}{Sally
+  Bamford}, \bibinfo{person}{Harry~C. Jubb}, \bibinfo{person}{Zbyslaw Sondka},
+  \bibinfo{person}{David~M. Beare}, \bibinfo{person}{Nidhi Bindal},
+  \bibinfo{person}{Harry Boutselakis}, \bibinfo{person}{Charlotte~G. Cole},
+  \bibinfo{person}{Celestino Creatore}, \bibinfo{person}{Elisabeth Dawson},
+  \bibinfo{person}{Peter Fish}, \bibinfo{person}{Bhavana Harsha},
+  \bibinfo{person}{Charlie Hathaway}, \bibinfo{person}{Steve~C. Jupe},
+  \bibinfo{person}{Chai~Yin Kok}, \bibinfo{person}{Kate Noble},
+  \bibinfo{person}{Laura Ponting}, \bibinfo{person}{Christopher~C. Ramshaw},
+  \bibinfo{person}{Claire~E. Rye}, \bibinfo{person}{Helen~E. Speedy},
+  \bibinfo{person}{Ray Stefancsik}, \bibinfo{person}{Sam~L. Thompson},
+  \bibinfo{person}{Shicai Wang}, \bibinfo{person}{Sari Ward},
+  \bibinfo{person}{Peter~J. Campbell}, {and} \bibinfo{person}{Simon~A.
+  Forbes}.} \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{{COSMIC}: the Catalogue Of Somatic Mutations In
+  Cancer}.
+\newblock \bibinfo{journal}{\emph{Nucleic Acids Research}}
+  \bibinfo{volume}{47}, \bibinfo{number}{D1} (\bibinfo{year}{2019}),
+  \bibinfo{pages}{D941--D947}.
+\newblock
+\href{https://doi.org/10.1093/nar/gky1015}{doi:\nolinkurl{10.1093/nar/gky1015}}
+
+
+\bibitem[Tsherniak et~al\mbox{.}(2017)]%
+        {tsherniak_2017_depmap}
+\bibfield{author}{\bibinfo{person}{Aviad Tsherniak}, \bibinfo{person}{Francisca
+  Vazquez}, \bibinfo{person}{Phil~G. Montgomery}, \bibinfo{person}{Barbara~A.
+  Weir}, \bibinfo{person}{Gregory Kryukov}, \bibinfo{person}{Glenn~S. Cowley},
+  \bibinfo{person}{Stanley Gill}, \bibinfo{person}{William~F. Harrington},
+  \bibinfo{person}{Sasha Pantel}, \bibinfo{person}{John~M. Krill-Burger},
+  \bibinfo{person}{Robin~M. Meyers}, \bibinfo{person}{Levi Ali},
+  \bibinfo{person}{Amy Goodale}, \bibinfo{person}{Yenarae Lee},
+  \bibinfo{person}{Guozhi Jiang}, \bibinfo{person}{Jessica Hsiao},
+  \bibinfo{person}{William F.~J. Geber}, \bibinfo{person}{Melissa Thibodeau},
+  \bibinfo{person}{Alfred Cheung}, \bibinfo{person}{Gloria Day},
+  \bibinfo{person}{Neekesh~V. Dharia}, \bibinfo{person}{David~E. Root}, {and}
+  \bibinfo{person}{William~C. Hahn}.} \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Defining a Cancer Dependency Map}.
+\newblock \bibinfo{journal}{\emph{Cell}} \bibinfo{volume}{170},
+  \bibinfo{number}{3} (\bibinfo{year}{2017}), \bibinfo{pages}{564--576}.
+\newblock
+\href{https://doi.org/10.1016/j.cell.2017.06.010}{doi:\nolinkurl{10.1016/j.cell.2017.06.010}}
+
+
+\bibitem[Turner et~al\mbox{.}(2017)]%
+        {turner_2017_ecdna}
+\bibfield{author}{\bibinfo{person}{Kristen~M. Turner}, \bibinfo{person}{Viraj
+  Deshpande}, \bibinfo{person}{Doruk Beyter}, \bibinfo{person}{Tomoyuki Koga},
+  \bibinfo{person}{Jessica Rusert}, \bibinfo{person}{Catherine Lee},
+  \bibinfo{person}{Bin Li}, \bibinfo{person}{Kinara Flanber},
+  \bibinfo{person}{Nao Shinohara}, \bibinfo{person}{Roel G.~W. Verhaak},
+  \bibinfo{person}{Paul~S. Mischel}, \bibinfo{person}{Frank~B. Furnari},
+  \bibinfo{person}{Webster~K. Cavenee}, {and} \bibinfo{person}{Vineet Bafna}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \showarticletitle{Extrachromosomal oncogene amplification drives
+  tumour evolution and genetic heterogeneity}.
+\newblock \bibinfo{journal}{\emph{Nature}} \bibinfo{volume}{543},
+  \bibinfo{number}{7643} (\bibinfo{year}{2017}), \bibinfo{pages}{122--125}.
+\newblock
+\href{https://doi.org/10.1038/nature21356}{doi:\nolinkurl{10.1038/nature21356}}
+
+
+\bibitem[Veli{\v{c}}kovi{\'c} et~al\mbox{.}(2018)]%
+        {velickovic_2018_gat}
+\bibfield{author}{\bibinfo{person}{Petar Veli{\v{c}}kovi{\'c}},
+  \bibinfo{person}{Guillem Cucurull}, \bibinfo{person}{Arantxa Casanova},
+  \bibinfo{person}{Adriana Romero}, \bibinfo{person}{Pietro Li{\`o}}, {and}
+  \bibinfo{person}{Yoshua Bengio}.} \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{Graph Attention Networks}. In
+  \bibinfo{booktitle}{\emph{International Conference on Learning
+  Representations}}.
+\newblock
+
+
+\bibitem[Verhaak et~al\mbox{.}(2019)]%
+        {verhaak_2019_ecdna_review}
+\bibfield{author}{\bibinfo{person}{Roel G.~W. Verhaak}, \bibinfo{person}{Vineet
+  Bafna}, {and} \bibinfo{person}{Paul~S. Mischel}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{Extrachromosomal oncogene amplification in tumour
+  pathogenesis and evolution}.
+\newblock \bibinfo{journal}{\emph{Nature Reviews Cancer}} \bibinfo{volume}{19},
+  \bibinfo{number}{5} (\bibinfo{year}{2019}), \bibinfo{pages}{283--288}.
+\newblock
+\href{https://doi.org/10.1038/s41568-019-0128-6}{doi:\nolinkurl{10.1038/s41568-019-0128-6}}
+
+
+\bibitem[Wilkinson et~al\mbox{.}(2007)]%
+        {wilkinson_2007_aurkb}
+\bibfield{author}{\bibinfo{person}{Richard~W. Wilkinson},
+  \bibinfo{person}{Rajesh Odedra}, \bibinfo{person}{Simon~P. Heaton},
+  \bibinfo{person}{Stephen~R. Wedge}, \bibinfo{person}{Nicola~J. Keen},
+  \bibinfo{person}{Claire Crafter}, \bibinfo{person}{John~R. Foster},
+  \bibinfo{person}{Marian~C. Brady}, \bibinfo{person}{Alison Bigley},
+  \bibinfo{person}{Elaine Brown}, \bibinfo{person}{Kate~F. Byth}, {and}
+  \bibinfo{person}{Ian Hickson}.} \bibinfo{year}{2007}\natexlab{}.
+\newblock \showarticletitle{{AZD1152}, a selective inhibitor of {Aurora B}
+  kinase, inhibits human tumor xenograft growth by inducing apoptosis}.
+\newblock \bibinfo{journal}{\emph{Clinical Cancer Research}}
+  \bibinfo{volume}{13}, \bibinfo{number}{12} (\bibinfo{year}{2007}),
+  \bibinfo{pages}{3682--3688}.
+\newblock
+\href{https://doi.org/10.1158/1078-0432.CCR-06-2979}{doi:\nolinkurl{10.1158/1078-0432.CCR-06-2979}}
+
+
+\bibitem[Yang et~al\mbox{.}(2013)]%
+        {gdsc_2013}
+\bibfield{author}{\bibinfo{person}{Wanjuan Yang}, \bibinfo{person}{Jorge
+  Soares}, \bibinfo{person}{Patricia Greninger}, \bibinfo{person}{Elena~J.
+  Edelman}, \bibinfo{person}{Howard Lightfoot}, \bibinfo{person}{Simon Forbes},
+  \bibinfo{person}{Nidhi Bindal}, \bibinfo{person}{Dave Beare},
+  \bibinfo{person}{James~A. Smith}, \bibinfo{person}{I.~Richard Thompson},
+  \bibinfo{person}{Sridhar Ramaswamy}, \bibinfo{person}{P.~Andrew Futreal},
+  \bibinfo{person}{Daniel~A. Haber}, \bibinfo{person}{Michael~R. Stratton},
+  \bibinfo{person}{Cyril Benes}, \bibinfo{person}{Ultan McDermott}, {and}
+  \bibinfo{person}{Mathew~J. Garnett}.} \bibinfo{year}{2013}\natexlab{}.
+\newblock \showarticletitle{Genomics of Drug Sensitivity in Cancer ({GDSC}): a
+  resource for therapeutic biomarker discovery in cancer cells}.
+\newblock \bibinfo{journal}{\emph{Nucleic Acids Research}}
+  \bibinfo{volume}{41}, \bibinfo{number}{D1} (\bibinfo{year}{2013}),
+  \bibinfo{pages}{D955--D961}.
+\newblock
+\href{https://doi.org/10.1093/nar/gks1111}{doi:\nolinkurl{10.1093/nar/gks1111}}
+
+
+\bibitem[Yi et~al\mbox{.}(2024)]%
+        {yi_2024_chk1_ecdna}
+\bibfield{author}{\bibinfo{person}{Eunhee Yi}, \bibinfo{person}{Ashish~D.
+  Gujar}, \bibinfo{person}{Michael Guthrie}, \bibinfo{person}{Hoon Kim},
+  \bibinfo{person}{Dan Zhao}, \bibinfo{person}{Kristen~C. Johnson},
+  \bibinfo{person}{Liangqi Ber}, \bibinfo{person}{John Moore},
+  \bibinfo{person}{Zhiwei Lv}, \bibinfo{person}{Liangqian Che},
+  \bibinfo{person}{Sten Lehn}, \bibinfo{person}{Alison~A. Ku},
+  \bibinfo{person}{Roel G.~W. Verhaak}, \bibinfo{person}{Surabhi Bhargava},
+  \bibinfo{person}{Vivek Bhargava}, {and} \bibinfo{person}{Paul~S. Mischel}.}
+  \bibinfo{year}{2024}\natexlab{}.
+\newblock \showarticletitle{Enhancing transcription--replication conflict
+  targets ec{DNA}-positive cancers}.
+\newblock \bibinfo{journal}{\emph{Nature}} \bibinfo{volume}{635},
+  \bibinfo{number}{8037} (\bibinfo{year}{2024}), \bibinfo{pages}{210--218}.
+\newblock
+\href{https://doi.org/10.1038/s41586-024-07802-5}{doi:\nolinkurl{10.1038/s41586-024-07802-5}}
+
+
+\bibitem[Zheng et~al\mbox{.}(2018)]%
+        {zheng_2018_notears}
+\bibfield{author}{\bibinfo{person}{Xun Zheng}, \bibinfo{person}{Bryon Aragam},
+  \bibinfo{person}{Pradeep Ravikumar}, {and} \bibinfo{person}{Eric~P. Xing}.}
+  \bibinfo{year}{2018}\natexlab{}.
+\newblock \showarticletitle{{DAGs} with {NO TEARS}: Continuous Optimization for
+  Structure Learning}. In \bibinfo{booktitle}{\emph{Advances in Neural
+  Information Processing Systems}}, Vol.~\bibinfo{volume}{31}.
+\newblock
+
+
+\bibitem[Zhou et~al\mbox{.}(2019)]%
+        {zhou_2021_kif11}
+\bibfield{author}{\bibinfo{person}{Jinxiang Zhou}, \bibinfo{person}{Wei-Lin
+  Chen}, \bibinfo{person}{Li-Cheng Yang}, \bibinfo{person}{Jianzhu Wang},
+  \bibinfo{person}{Jia-Yi Sun}, \bibinfo{person}{Pei-Pei Zhang},
+  \bibinfo{person}{Bing-Jun He}, {and} \bibinfo{person}{Shengjie Luo}.}
+  \bibinfo{year}{2019}\natexlab{}.
+\newblock \showarticletitle{{KIF11} Functions as an Oncogene and Is Associated
+  with Poor Outcomes from Breast Cancer}.
+\newblock \bibinfo{journal}{\emph{Cancer Research and Treatment}}
+  \bibinfo{volume}{51}, \bibinfo{number}{3} (\bibinfo{year}{2019}),
+  \bibinfo{pages}{1207--1221}.
+\newblock
+\href{https://doi.org/10.4143/crt.2018.460}{doi:\nolinkurl{10.4143/crt.2018.460}}
+
+
+\end{thebibliography}

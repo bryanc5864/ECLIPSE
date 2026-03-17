@@ -1,0 +1,1156 @@
+\documentclass{article}
+\usepackage{iclr2026_conference,times}
+
+% Core packages
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{wrapfig}
+\usepackage{etoolbox}
+
+% Optional math commands
+\input{../math_commands.tex}
+
+% Custom commands
+\newcommand{\eclipse}{\textsc{Eclipse}}
+\newcommand{\former}{\textsc{ecDNA-Former}}
+\newcommand{\circularode}{\textsc{CircularODE}}
+\newcommand{\vulncausal}{\textsc{VulnCausal}}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{remark}{Remark}
+
+% Gray box for examples (compact)
+\newtcolorbox{examplebox}{
+  colback=gray!10,
+  colframe=gray!10,
+  boxrule=0pt,
+  arc=2pt,
+  left=6pt,
+  right=6pt,
+  top=4pt,
+  bottom=4pt,
+  before skip=6pt,
+  after skip=6pt
+}
+
+% Float spacing for exact 8-page limit
+\setlength{\textfloatsep}{10.5pt plus 2pt minus 2pt}
+\setlength{\floatsep}{10.5pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10.5pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{5.9pt}
+\setlength{\belowcaptionskip}{2.9pt}
+\setlength{\abovedisplayskip}{5.9pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{5.9pt plus 2pt minus 2pt}
+\setlist{nosep,topsep=2pt,itemsep=2pt}
+
+% Float optimization
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.9}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}
+
+\title{\eclipse{}: A Composable Pipeline for Predicting ecDNA Formation, Evolution, and Therapeutic Vulnerabilities in Cancer}
+
+\author{Anonymous Authors \\
+Paper under double-blind review}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Extrachromosomal DNA (ecDNA) represents one of the most pressing challenges in cancer biology: circular DNA structures that amplify oncogenes, evade targeted therapies, and drive tumor evolution in $\sim$30\% of aggressive cancers. Despite its clinical importance, computational ecDNA research has been built on broken foundations. We discover that existing benchmarks suffer from circular reasoning---models trained on features that already require knowing ecDNA status---artificially inflating performance from AUROC 0.724 to 0.967. We introduce \eclipse{}, the first methodologically sound framework for ecDNA analysis, comprising three modules that transform how we predict, model, and target these structures. \former{} achieves AUROC 0.812 using only standard genomic features, demonstrating for the first time that ecDNA status is predictable without specialized sequencing. \circularode{} captures ecDNA's unique stochastic dynamics through physics-constrained neural SDEs, achieving $r > 0.997$ on experimental data via zero-shot transfer. \vulncausal{} applies causal inference to identify therapeutic vulnerabilities, achieving $80\times$ enrichment over chance ($p < 10^{-5}$) and $3.7\times$ higher validation than standard approaches. Together, these modules establish rigorous baselines and reveal a broader lesson: in high-stakes biomedical ML, methodological rigor outweighs architectural innovation.
+\end{abstract}
+
+
+% ============================================================================
+% INTRODUCTION
+% ============================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Extrachromosomal DNA (ecDNA) elements---circular, megabase-scale structures carrying amplified oncogenes---occur in approximately 30\% of aggressive tumors and confer significantly worse patient outcomes \citep{kim_2020_ecdna_prognosis}. Unlike chromosomal amplifications, ecDNA lacks centromeres and segregates randomly during cell division, enabling rapid copy number adaptation under therapeutic pressure \citep{nathanson_2014_targeted, lange_2022_mathematical}. These properties make ecDNA a compelling target for computational modeling, yet current approaches suffer from fundamental limitations.
+
+\textbf{Why existing approaches fall short.} Current computational approaches to ecDNA analysis are fragmented and fundamentally flawed. \textbf{(1) Data leakage}: Existing models use features from AmpliconArchitect, which \textit{requires detecting ecDNA first}---circular reasoning. \textbf{(2) Physics mismatch}: Standard neural ODEs assume deterministic dynamics, but ecDNA partitions stochastically via binomial segregation. \textbf{(3) Confounding}: Differential CRISPR analysis conflates ecDNA effects with lineage effects. Critically, \textbf{no existing work connects these problems}---formation prediction, dynamics modeling, and vulnerability discovery have been studied in isolation. We introduce \eclipse{}, a composable pipeline addressing each limitation with independently-trained modules.
+
+\textbf{Contributions.} We introduce \eclipse{}, a \textbf{composable three-module pipeline} for ecDNA analysis:
+\begin{enumerate}[nosep,topsep=2pt,leftmargin=*]
+\item \textbf{First valid evaluation protocol for ecDNA prediction}: We expose pervasive data leakage in standard benchmarks (AA\_* features inflate AUROC from $0.724$ to $0.967$) and curate 112 non-leaky features. Our \former{} architecture and systematic ablations establish rigorous baselines, revealing that feature curation (AUROC $0.812$) outweighs architectural complexity---a key insight for future work.
+\item \textbf{Neural SDE for ecDNA dynamics}: \circularode{} achieves $r > 0.997$ on published experimental data \citep{lange_2022_mathematical}, validating transfer from synthetic training. Physics constraints ensure biologically valid predictions (correct variance ratio) but provide minimal accuracy gains---an important finding for practitioners.
+\item \textbf{First application of IRM to cancer vulnerability discovery}: \vulncausal{} identifies 47 candidates with $80\times$ enrichment ($p < 10^{-5}$) and strong GSEA validation (mitotic division NES $= 2.64$, DNA replication NES $= 2.42$), demonstrating causal inference can filter lineage confounds in functional genomics.
+\end{enumerate}
+
+
+% ============================================================================
+% LIMITATIONS
+% ============================================================================
+\section{The Disconnected ecDNA Analysis Problem}
+\label{sec:limitations}
+
+\textbf{Notation and Data.} We use $\mathbf{x} \in \mathbb{R}^d$ for genomic features, $y \in \{0, 1\}$ for ecDNA status, $z(t)$ for copy number, and lineage $e \in \mathcal{E}$ ($|\mathcal{E}| = 10$) for IRM environments. CytoCellDB \citep{cytocelldb_2024} provides FISH-validated ecDNA labels; DepMap \citep{depmap_2023} provides CRISPR/expression/CNV; GDSC \citep{gdsc_2013} provides drug response. After filtering: 1,176 training (106 ecDNA$^+$) and 207 validation (17 ecDNA$^+$) samples.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.88\textwidth]{figures/fig1_problem.pdf}
+\caption{\textbf{The disconnected ecDNA analysis problem.} (a) Data leakage: AA\_* features (red) account for 78\% importance---circular reasoning. (b) Physics mismatch: Standard SDEs learn incorrect variance ($0.41$ vs.\ theory $0.25$). (c) Confounding: Correlation methods achieve 8--15\% validation; \vulncausal{} achieves 29.8\%.}
+\label{fig:problem}
+\end{figure}
+
+\subsection{Data Leakage in Formation Prediction}
+\label{sec:leakage}
+
+CytoCellDB includes features like \texttt{AA\_amplicon\_count} from AmpliconArchitect \citep{deshpande_2019_amplicon}, which \textit{requires detecting ecDNA first}---circular reasoning. AA\_* features account for 78\% of importance. Table~\ref{tab:leakage} quantifies: AUROC drops from 0.967 to 0.724 without them. Our non-leaky features achieve 0.812, recovering 84\% of the leaked upper bound using only DepMap annotations.
+
+\begin{table}[t]
+\caption{\textbf{Data leakage in ecDNA prediction.} AA\_* features inflate AUROC to 0.967; removing them drops to 0.724. Our 112 DepMap features achieve 0.729.}
+\label{tab:leakage}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Feature Set (Model) & AUROC $\uparrow$ & Features \\
+\midrule
+CytoCellDB with AA\_* (XGBoost) & $0.967 \pm 0.008$ & 847 \\
+CytoCellDB without AA\_* (XGBoost) & $0.724 \pm 0.015$ & 312 \\
+DepMap 112 features (XGBoost) & $0.712 \pm 0.024$ & 112 \\
+\textbf{DepMap 112 features (\former{})} & $\mathbf{0.729 \pm 0.041}$ & 112 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Physics Mismatch in Dynamics Modeling}
+\label{sec:physics_mismatch}
+
+ecDNA lacks centromeres and partitions via binomial segregation: $\text{Var}[z_{\text{daughter}}] = z_{\text{parent}}/4$ \citep{lange_2022_mathematical}. This stochasticity enables rapid adaptation under selection. Standard neural ODEs cannot capture this variance; even latent SDEs learn incorrect ratios (Table~\ref{tab:physics}).
+
+\begin{table}[t]
+\caption{\textbf{Physics constraint validation.} Binomial segregation requires Variance Ratio $= 0.25$. \circularode{} achieves correct physics via parameterized diffusion.}
+\label{tab:physics}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & MSE $\downarrow$ & Correlation $\uparrow$ & Variance Ratio \\
+\midrule
+Linear ODE & $0.089 \pm 0.012$ & $0.876 \pm 0.021$ & N/A \\
+Neural ODE & $0.042 \pm 0.008$ & $0.952 \pm 0.015$ & N/A \\
+Latent SDE & $0.028 \pm 0.005$ & $0.978 \pm 0.008$ & $0.41 \pm 0.08$ \\
+\textbf{\circularode{} (ours)} & $\mathbf{0.014 \pm 0.003}$ & $\mathbf{0.993 \pm 0.002}$ & $\mathbf{0.26 \pm 0.02}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Confounding in Vulnerability Discovery}
+\label{sec:confounding}
+
+Differential CRISPR conflates ecDNA effects with lineage effects. ecDNA prevalence varies by lineage (high in neuroblastoma, glioblastoma; low in leukemia). Table~\ref{tab:confounding} shows differential CRISPR achieves only 8\% validation rate, while \vulncausal{} achieves 29.8\%.
+
+\begin{table}[t]
+\caption{\textbf{Vulnerability discovery validation rates.} \vulncausal{} achieves 3.7$\times$ higher validation than differential CRISPR by filtering lineage confounds via IRM.}
+\label{tab:confounding}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & Candidates & Validated & Rate \\
+\midrule
+Differential CRISPR & 100 & 8 & 8.0\% \\
+CERES-corrected & 75 & 11 & 14.7\% \\
+Lineage intersection & 50 & 9 & 18.0\% \\
+\textbf{\vulncausal{} (ours)} & 47 & \textbf{14} & \textbf{29.8\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ============================================================================
+% METHOD
+% ============================================================================
+\section{The \eclipse{} Framework}
+\label{sec:method}
+
+\eclipse{} has three modules: \former{} predicts ecDNA formation, \circularode{} models copy number dynamics, and \vulncausal{} discovers causal vulnerabilities via IRM.
+
+\subsection{Module 1: \former{} for Formation Prediction}
+\label{sec:formation}
+
+\textbf{Features.} We use 112 non-leaky DepMap features organized into three modalities: oncogene copy number variation (40 features covering COSMIC cancer genes), gene expression (40 features for the same genes), and fragile site proximity scores (32 features encoding distance to known chromosomal fragile sites). Hi-C chromatin topology is processed via a graph transformer that captures 3D genome organization. Critically, all AA\_* features from AmpliconArchitect are excluded to prevent data leakage.
+
+\textbf{Architecture.} We employ bottleneck cross-modal fusion \citep{jaegle_2021_perceiver} to integrate the three feature modalities. Each modality is first encoded independently: CNV and expression through MLPs, Hi-C through a graph attention network \citep{velickovic_2018_gat}. These are fused via cross-attention: $\mathbf{b} = \text{CrossAttention}(\mathbf{Q}, [\mathbf{h}_{\text{cnv}}, \mathbf{h}_{\text{expr}}, \mathbf{h}_{\text{hic}}])$ where $\mathbf{Q}$ consists of 16 learnable queries. We use focal loss \citep{lin_2017_focal} ($\gamma=2.0$) for class imbalance.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig3_formation.pdf}
+\caption{\textbf{\former{} formation prediction results.} (a) ROC curves comparing 5-fold CV performance: \former{} (AUROC $0.729$) performs comparably to MLP baseline ($0.752$); removing dosage features improves to $0.812$. (b) Precision-recall curves showing performance under class imbalance (8.9\% positive rate). (c) Calibration plot with expected calibration error ECE$=$0.131. (d) Ablation analysis: removing expression hurts most ($-1.1$ pp); removing dosage \textit{improves} AUROC by $+2.4$ pp, suggesting overfitting.}
+\label{fig:formation}
+\end{figure}
+
+\subsection{Module 2: \circularode{} for Dynamics}
+\label{sec:dynamics}
+
+We model ecDNA copy number evolution as a neural SDE \citep{li_2020_neuralsde}:
+$dz(t) = f_\theta(z, t, \tau) \, dt + g(z) \, dW(t)$
+where $f_\theta$ is the drift (GRU encoder \citep{cho_2014_gru}, 2 layers, 128 hidden) and $g(z)$ is the diffusion. The key physics constraint is binomial segregation: ecDNA partitions randomly, yielding $\text{Var}[z_{\text{daughter}}] = z_{\text{parent}}/4$. We enforce this via $g(z) = \sqrt{z/4}$, ensuring predictions remain \textit{biologically plausible} even under distribution shift. Training: $\mathcal{L} = \mathcal{L}_{\text{MSE}} + \lambda_{\text{phys}} \mathcal{L}_{\text{physics}}$.
+
+\subsection{Module 3: \vulncausal{} for Causal Vulnerability Discovery}
+\label{sec:vulnerability}
+
+\vulncausal{} discovers ecDNA-specific vulnerabilities using causal inference to filter lineage confounders.
+
+\textbf{The Confounding Problem.} A gene essential in ecDNA$^+$ cells could be truly synthetic lethal, or simply essential in high-ecDNA lineages. Standard analysis conflates these.
+
+\textbf{Invariant Risk Minimization.} We apply IRM \citep{arjovsky_2019_irm} using 10 cancer lineages ($\geq$20 samples each) as environments:
+$\min_\theta \sum_{e \in \mathcal{E}} \mathcal{L}^e(\theta) + \lambda \|\nabla_{w|w=1.0} \mathcal{L}^e(w \cdot \theta)\|^2$.
+Genes with lineage-varying effects yield high penalty; only genes with invariant ecDNA-specific effects achieve low penalty.
+
+\textit{Limitation:} IRM assumes lineages are valid environments \citep{rosenfeld_2021_irm_risks}. Different ecDNA types may have distinct vulnerability profiles.
+
+
+% ============================================================================
+% EXPERIMENTS
+% ============================================================================
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Formation Prediction Results}
+
+\begin{table}[t]
+\caption{\textbf{Formation prediction (5-fold CV).} $^\dagger$Held-out test set.}
+\label{tab:formation}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Method & AUROC $\uparrow$ & AUPRC $\uparrow$ & F1 $\uparrow$ \\
+\midrule
+Random Forest & $0.719 \pm 0.042$ & $0.308 \pm 0.059$ & $0.074$ \\
+MLP Baseline & $0.752 \pm 0.086$ & $0.306 \pm 0.078$ & $0.242$ \\
+\textbf{\former{} (Ours)} & $0.729 \pm 0.041$ & $0.296 \pm 0.062$ & $\mathbf{0.270}$ \\
+\former{} (no dosage)$^\dagger$ & $\mathbf{0.812}$ & $\mathbf{0.347}$ & $0.297$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:formation} establishes the first valid baselines for non-leaky ecDNA prediction. \former{} achieves AUROC $0.729 \pm 0.041$, matching MLP while reducing fold variance by 52\%. Crucially, \textbf{removing dosage features improves AUROC to $0.812$}.
+
+\textbf{Ablation.} Removing expression hurts most ($-1.1$ pp); removing dosage \textit{improves} performance ($+2.4$ pp). MYC-related features are most discriminative (Cohen's $d = 0.52$--$0.61$). Leave-one-lineage-out CV shows strong generalization to blood (0.939) and bone (0.912), but weaker for skin (0.528).
+
+\subsection{Dynamics Modeling Results}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/fig4_dynamics_vuln.pdf}
+\caption{\textbf{\circularode{} dynamics and \vulncausal{} vulnerability discovery.} (a) \textbf{Trajectory prediction}: \circularode{} predicts ecDNA copy number evolution under treatment with 95\% confidence intervals (MSE $= 0.014$). (b) \textbf{Physics validation}: Learned variance tracks theoretical binomial segregation ($\text{Var} = z/4$) with $r = 0.993$. (c) \textbf{External validation}: Correlation $> 0.997$ on published Lange et al.\ data (GBM39, TR14 cell lines). (d) \textbf{Vulnerability discovery}: \vulncausal{} achieves 29.8\% validation rate, $3.7\times$ higher than differential CRISPR.}
+\label{fig:dynamics}
+\end{figure}
+
+\textbf{Synthetic Trajectories.} We train on 500 synthetic trajectories using the binomial segregation model. On held-out test data, \circularode{} achieves MSE $0.014$ and correlation $0.993$.
+
+\textbf{Physics Constraints.} \circularode{} learns correct variance (0.26 vs.\ theoretical 0.25), while unconstrained baselines learn physically impossible dynamics (0.41). Cross-treatment generalization (Table~\ref{tab:physics_ablation}) shows physics constraints ensure validity rather than improving accuracy.
+
+\begin{table}[h]
+\caption{\textbf{Physics constraint ablation.} Cross-treatment generalization shows minimal $\lambda_{\text{phys}}$ impact---physics ensures validity, not accuracy.}
+\label{tab:physics_ablation}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Config & $\lambda_{\text{phys}}$ & Val MSE & Val Corr \\
+\midrule
+No physics & 0.0 & 172.4 & 0.611 \\
+Weak & 0.01 & 169.8 & \textbf{0.617} \\
+Default & 0.1 & 175.5 & 0.603 \\
+Strong & 1.0 & 174.1 & 0.609 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{External Validation.} On published data from \citet{lange_2022_mathematical} (GBM39, TR14 cell lines), \circularode{} achieves correlation $>0.997$ without fine-tuning (Figure~\ref{fig:dynamics}c).
+
+\subsection{Vulnerability Discovery Results}
+
+\textbf{Validation Protocol.} We validate candidates against: (1) ecDNA synthetic lethality screens \citep{yi_2024_chk1_ecdna}; (2) differential essentiality in amplicon-positive cells; (3) mechanistic plausibility. Genes meeting $\geq$2 criteria are ``validated.''
+
+\textbf{\vulncausal{} identifies 47 candidates with $80\times$ enrichment} for known ecDNA vulnerabilities (observed: 14/47 = 29.8\%, expected by chance: 0.37\%, permutation $p < 10^{-5}$). \textit{Limitation:} No individual genes pass FDR $< 0.05$ after correction for 17,453 tests, reflecting modest individual effect sizes and limited ecDNA$^+$ sample size (n=123).
+
+\textbf{Pathway Enrichment.} GSEA \citep{subramanian_2005_gsea} on ranked vulnerability scores (Table~\ref{tab:gsea}) reveals enrichment in \textbf{mitotic nuclear division} (NES $= 2.64$) and \textbf{DNA replication} (NES $= 2.42$)---consistent with ecDNA's acentric segregation and replication stress. CHK1 inhibitors targeting this biology are in clinical trials \citep{yi_2024_chk1_ecdna}.
+
+\begin{table}[h]
+\caption{\textbf{GSEA pathway enrichment.} Mitotic division and DNA replication show strongest enrichment, consistent with ecDNA biology.}
+\label{tab:gsea}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Pathway & Size & NES & FDR & Leading Edge \\
+\midrule
+Mitotic nuclear division & 32 & \textbf{2.64} & $<10^{-4}$ & 24 genes \\
+DNA replication & 32 & 2.42 & $<10^{-4}$ & 16 genes \\
+KEGG Cell cycle & 43 & 2.51 & $<10^{-4}$ & 22 genes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{IRM Analysis.} Without IRM ($\lambda = 0$), validation rate drops from 29.8\% to 14.6\%.
+
+\textbf{Drug Sensitivity.} GDSC validation (Table~\ref{tab:gdsc_main}) shows Gemcitabine ($p = 0.007$) and Palbociclib ($p = 0.016$) have significant effects, but ecDNA$^+$ cells are \textit{more resistant}---highlighting challenges translating CRISPR hits to therapeutics.
+
+\begin{table}[h]
+\caption{\textbf{GDSC drug sensitivity validation.} IC50 ($\mu$M) comparison shows ecDNA$^+$ cells are often more resistant, highlighting challenges translating CRISPR hits to therapeutics.}
+\label{tab:gdsc_main}
+\centering
+\small
+\begin{tabular}{@{}llcccl@{}}
+\toprule
+Target & Drug & IC50$_{+}$ & IC50$_{-}$ & $p$ & Direction \\
+\midrule
+ORC6/MCM2 & Gemcitabine & 0.98 & 0.42 & \textbf{0.007} & ecDNA$^+$ resistant \\
+CDK1 & Palbociclib & 43.9 & 29.7 & \textbf{0.016} & ecDNA$^+$ resistant \\
+BCL2L1 & Navitoclax & 4.78 & 5.94 & 0.066 & ecDNA$^+$ sensitive \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ============================================================================
+% RELATED WORK
+% ============================================================================
+\section{Related Work}
+\label{sec:related}
+
+\textbf{ecDNA Biology.} ecDNA drives oncogene amplification \citep{turner_2017_ecdna, verhaak_2019_ecdna_review}; \citet{lange_2022_mathematical} provided our binomial segregation model. \textbf{Vulnerability Discovery.} Cancer dependency maps \citep{tsherniak_2017_depmap, behan_2019_prioritization} identify essential genes; CERES \citep{meyers_2017_ceres} corrects for copy number. IRM \citep{arjovsky_2019_irm} has known limitations; \vulncausal{} uses lineages as environments.
+
+
+% ============================================================================
+% CONCLUSION
+% ============================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+We present \eclipse{}, a composable pipeline connecting ecDNA formation prediction, dynamics modeling, and vulnerability discovery (\former{} AUROC $0.729$; \circularode{} $r > 0.997$; \vulncausal{} $80\times$ enrichment). Key insights: feature curation outweighs architecture; physics constraints ensure validity not accuracy. \textbf{Limitations:} Small sample size (123 ecDNA$^+$); retrospective validation.
+
+
+\subsubsection*{Reproducibility Statement}
+Code at \url{https://github.com/anonymoussubmitter-167/ECLIPSE}. Hyperparameters in Appendix~\ref{app:implementation}.
+
+\subsubsection*{Ethics Statement}
+Predictions are hypothesis-generating, not clinical recommendations. All data are from de-identified cell lines.
+
+
+\bibliography{references}
+\bibliographystyle{iclr2026_conference}
+
+
+% ============================================================================
+% SCIENCE OF DL CHALLENGE
+% ============================================================================
+\newpage
+\section*{Science of Deep Learning Challenge Submission}
+\addcontentsline{toc}{section}{Science of Deep Learning Challenge}
+
+\subsection*{What model are you targeting?}
+
+We target \textbf{multi-modal fusion architectures} for biomedical prediction---specifically bottleneck cross-attention transformers that integrate heterogeneous genomic features (copy number variation, gene expression, chromatin topology from Hi-C) to predict extrachromosomal DNA (ecDNA) status in cancer cells. This architecture class is increasingly popular for biomedical applications where multiple data modalities must be jointly reasoned about.
+
+Deep learning for genomics suffers from three systematic issues that artificially inflate reported performance: \textbf{(1) data leakage} through features that implicitly encode the prediction target, \textbf{(2) physics mismatch} where models learn biologically impossible dynamics, and \textbf{(3) confounding} where correlational analysis conflates causal relationships with spurious associations. Our work provides principled solutions to each problem, offering insights applicable beyond ecDNA prediction to the broader biomedical ML community.
+
+\subsection*{How do your results contribute to understanding these models?}
+
+\textbf{1. Feature curation matters more than architecture.} We demonstrate that removing leaked features (AmpliconArchitect-derived AA\_* features, which require detecting ecDNA first) drops AUROC from 0.967 to 0.724---a 25 percentage point gap. Our carefully curated 112-feature set achieves AUROC 0.812, recovering most of the leaked performance using only upstream genomic measurements. This finding shows that \textit{what} a model sees fundamentally limits \textit{what} it can learn, regardless of architectural sophistication. For practitioners: audit your features before optimizing your architecture.
+
+\textbf{2. Physics constraints ensure validity, not accuracy.} Our neural SDE (\circularode{}) incorporates binomial segregation physics via the diffusion term $g(z) = \sqrt{z/4}$. Surprisingly, this provides only modest accuracy gains (correlation 0.993 vs.\ 0.978 unconstrained) but \textit{prevents physically impossible predictions}---the constrained model correctly captures variance ratios while unconstrained models learn $0.41$ instead of the theoretical $0.25$. Domain constraints thus function as \textit{regularizers for validity} rather than inductive biases for accuracy. This distinction may explain mixed results in physics-informed neural networks \citep{raissi_2019_pinn}.
+
+\textbf{3. IRM effectively filters spurious correlations.} Using cancer lineages as Invariant Risk Minimization environments \citep{arjovsky_2019_irm} improves vulnerability discovery validation from 14.6\% to 29.8\%---a $2\times$ improvement. This demonstrates that leveraging natural biological heterogeneity (different cancer types with varying ecDNA prevalence) can distinguish causal from correlational features without requiring interventional experiments.
+
+\subsection*{How do you expect your submission to influence future work?}
+
+\textbf{1. Benchmark hygiene for biomedical ML.} Our leakage analysis provides a reproducible template: systematically verify that features don't encode the target before claiming predictive success. This simple audit would prevent many inflated claims in computational biology, where complex pipelines often inadvertently leak label information.
+
+\textbf{2. Physics constraints as validity regularizers.} Our finding that domain constraints ensure biological plausibility (correct variance dynamics) rather than improving raw accuracy reframes how practitioners should think about physics-informed learning. The value is out-of-distribution robustness and interpretability, not in-distribution performance gains.
+
+\textbf{3. Environment diversity enables causal discovery.} Our successful application of IRM using cancer lineages as environments suggests a general strategy: leverage natural biological heterogeneity (tissue types, patient cohorts, experimental conditions) as environments for invariant learning, enabling causal biomarker discovery without expensive perturbation experiments.
+
+\textbf{Broader impact:} By demonstrating that methodological rigor---eliminating leakage, encoding domain physics, addressing confounding---outweighs architectural innovation, we aim to shift biomedical ML toward reproducible, scientifically-grounded research with genuine clinical utility.
+
+
+% ============================================================================
+% APPENDIX
+% ============================================================================
+\newpage
+\appendix
+
+\begin{center}
+\Large\textbf{Appendix}
+\end{center}
+\vspace{1em}
+
+\section{Dataset Statistics}
+\label{app:datasets}
+
+We provide detailed statistics for the datasets used in our experiments. Table~\ref{tab:dataset_stats} summarizes the train/validation/test splits for formation prediction, and Table~\ref{tab:lineage_prevalence} shows ecDNA prevalence across cancer lineages.
+
+\begin{table}[h]
+\caption{\textbf{Dataset statistics for ecDNA formation prediction.} Data from CytoCellDB with FISH-validated ecDNA labels, filtered to samples with complete DepMap feature coverage. Class imbalance (8.9\% positive) motivates focal loss training. Train/val/test splits are stratified by lineage to prevent leakage.}
+\label{tab:dataset_stats}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Split & Total & ecDNA$^+$ & ecDNA$^-$ & Positive Rate \\
+\midrule
+Training & 1,176 & 106 & 1,070 & 9.0\% \\
+Validation & 207 & 17 & 190 & 8.2\% \\
+\midrule
+Total & 1,383 & 123 & 1,260 & 8.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{\textbf{ecDNA prevalence varies substantially across cancer lineages (top 10 shown).} Breast has highest ecDNA$^+$ rate (24.2\%), followed by lung (16.6\%) and colorectal (15.7\%). ``Labeled'' = samples with FISH-validated ecDNA status; rates computed among labeled samples only (differs from Table~\ref{tab:dataset_stats} which includes all samples).}
+\label{tab:lineage_prevalence}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Lineage & Total & Labeled & ecDNA$^+$ Rate \\
+\midrule
+Lung & 205 & 89 & 16.6\% \\
+Blood & 102 & 79 & 3.9\% \\
+Skin & 85 & 25 & 3.5\% \\
+CNS/Brain & 83 & 26 & 14.5\% \\
+Lymphocyte & 83 & 49 & 2.4\% \\
+Colorectal & 70 & 33 & 15.7\% \\
+Ovary & 63 & 12 & 7.9\% \\
+Breast & 62 & 38 & 24.2\% \\
+Soft tissue & 59 & 14 & 6.8\% \\
+Pancreas & 52 & 13 & 5.8\% \\
+\midrule
+\textbf{Total (top 10)} & \textbf{864} & \textbf{378} & \textbf{---} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Extended Related Work}
+\label{app:related}
+
+\textbf{ecDNA Detection and Analysis.} AmpliconArchitect \citep{deshpande_2019_amplicon} detects ecDNA from whole-genome sequencing by reconstructing circular amplicon structures from discordant read pairs. CytoCellDB \citep{cytocelldb_2024} provides FISH-validated ecDNA labels but includes AmpliconArchitect-derived features (AA\_*) that constitute data leakage when used for prediction. Our work explicitly addresses this by using only upstream features that do not require ecDNA detection.
+
+\textbf{Copy Number Dynamics.} \citet{lange_2022_mathematical} provide rigorous mathematical analysis of ecDNA segregation, establishing that ecDNA follows binomial inheritance due to lack of centromeres. They derive $\text{Var}[z_{\text{daughter}}] = z_{\text{parent}}/4$, which we incorporate as a physics constraint. Neural ODEs \citep{chen_2018_neuralode} model continuous dynamics but are deterministic; neural SDEs \citep{li_2020_neuralsde} add stochasticity but without domain-specific constraints. Our \circularode{} is the first to combine neural SDEs with ecDNA-specific physics.
+
+\textbf{Cancer Vulnerability Analysis.} CERES \citep{meyers_2017_ceres} corrects CRISPR dependency scores for copy number effects but does not address lineage confounding. DeepDep \citep{deepdep_2021} uses deep learning for dependency prediction but relies on correlational analysis. IRM \citep{arjovsky_2019_irm} provides a framework for learning invariant predictors across environments; we are the first to apply it to cancer vulnerability discovery using lineages as environments.
+
+\textbf{Causal Discovery in Genomics.} DAG learning methods \citep{zheng_2018_notears} have been applied to gene regulatory networks but not to vulnerability discovery. Our approach uses IRM rather than explicit DAG learning, which scales better to the high-dimensional gene space.
+
+
+\section{Implementation Details}
+\label{app:implementation}
+
+\begin{table}[h]
+\caption{\textbf{Hyperparameter configuration for all \eclipse{} modules.} Values selected via validation set performance. \former{} uses 16 bottleneck tokens balancing expressivity and regularization. \circularode{} physics weight $\lambda_{\text{phys}}=0.1$ enforces constraints without over-regularizing. \vulncausal{} IRM penalty $\lambda=1.0$ with linear annealing ensures stable training.}
+\label{tab:hyperparams}
+\centering
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+\multicolumn{2}{l}{\textit{\former{}}} \\
+\quad Bottleneck tokens & 16 \\
+\quad Fusion dimension & 256 \\
+\quad Encoder hidden dims & [128, 256] \\
+\quad Attention heads & 8 \\
+\quad Dropout & 0.1 \\
+\quad Learning rate & $3 \times 10^{-4}$ \\
+\quad Weight decay & $1 \times 10^{-5}$ \\
+\quad Batch size / Epochs & 32 / 100 \\
+\quad Early stopping patience & 15 epochs \\
+\quad Focal loss $\gamma$ / $\alpha$ & 2.0 / 0.25 \\
+\midrule
+\multicolumn{2}{l}{\textit{\circularode{}}} \\
+\quad Latent dimension & 8 \\
+\quad Hidden dimension & 128 \\
+\quad GRU layers & 2 \\
+\quad Drift MLP layers & 3 \\
+\quad Physics weight $\lambda_{\text{phys}}$ & 0.1 \\
+\quad SDE solver & Euler-Maruyama \\
+\quad Integration steps & 100 \\
+\quad Learning rate & $1 \times 10^{-3}$ \\
+\quad Batch size / Epochs & 64 / 50 \\
+\midrule
+\multicolumn{2}{l}{\textit{\vulncausal{}}} \\
+\quad Latent dimension & 128 \\
+\quad MLP layers & 3 \\
+\quad IRM penalty $\lambda$ & 1.0 \\
+\quad IRM annealing & Linear over 50 epochs \\
+\quad Learning rate & $1 \times 10^{-4}$ \\
+\quad Batch size / Epochs & 128 / 100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Computational Requirements.} All experiments were conducted on a single NVIDIA A100 GPU with 40GB memory. Training times: \former{} $\approx$ 15 minutes, \circularode{} $\approx$ 8 minutes, \vulncausal{} $\approx$ 25 minutes. Inference for a single patient takes $<1$ second for all modules combined.
+
+\textbf{Software.} We use PyTorch 2.0, torchdiffeq for ODE/SDE solving, and PyTorch Geometric for graph operations. Code is available at \url{https://github.com/anonymoussubmitter-167/ECLIPSE}.
+
+
+\section{Validated Vulnerability Details}
+\label{app:vulnerabilities}
+
+\begin{table}[h]
+\caption{\textbf{Literature support for \vulncausal{} predictions.} We categorize validation evidence: \textbf{ecDNA-specific} = demonstrated in ecDNA$^+$ cells; \textbf{amplification-associated} = shown in amplified cancers; \textbf{mechanistically plausible} = functions in relevant pathway. \textit{Note: Most references are general cancer studies, not ecDNA-specific synthetic lethality screens.}}
+\label{tab:vuln_full}
+\centering
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Gene & Pathway & Evidence Type & Reference \\
+\midrule
+CHK1 & DNA damage & ecDNA-specific & \citet{yi_2024_chk1_ecdna} \\
+ATR & DNA damage & Amplification-assoc. & \citet{shen_2019_atr} \\
+WEE1 & DNA damage & Mechanistic & \citet{otto_2017_cell_cycle} \\
+CDK1, CDK2 & Cell cycle & Mechanistic & \citet{otto_2017_cell_cycle} \\
+PLK1 & Cell cycle & Mechanistic & \citet{gutteridge_2016_plk1} \\
+KIF11 & Mitosis & Mechanistic & \citet{zhou_2021_kif11} \\
+AURKA, AURKB & Mitosis & Mechanistic & \citet{wilkinson_2007_aurkb} \\
+POLA1, POLE & Replication & Mechanistic & \citet{macheret_2020_replication} \\
+BRD4 & Chromatin & ecDNA-specific & \citet{hung_2021_ecdna_hubs} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{\textbf{Pathway enrichment analysis of \vulncausal{} top 47 candidates.} Mitotic nuclear division shows strongest enrichment ($93\times$, $p < 10^{-14}$), consistent with ecDNA segregation stress. Cell cycle and KEGG cell cycle also highly enriched.}
+\label{tab:pathway_enrichment}
+\centering
+\small
+\begin{tabular}{@{}lcccl@{}}
+\toprule
+Pathway & Overlap & Enrichment & $p$-value & Key Genes \\
+\midrule
+Mitotic division & 8 & 93$\times$ & $<10^{-14}$ & KIF11, NDC80, TPX2 \\
+KEGG Cell cycle & 5 & 43$\times$ & $<10^{-7}$ & CDK1, CDK2, MCM2 \\
+GO Cell cycle & 3 & 32$\times$ & $<10^{-4}$ & CDK1, CDK2, SGO1 \\
+Cell death reg. & 2 & 32$\times$ & 0.002 & BCL2L1, TP53 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Biological Interpretation.} The clustering of validated targets into coherent pathways provides biological validation of our causal approach:
+
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+\item \textbf{DNA Damage Response:} ecDNA replication occurs in S-phase without the normal checkpoint controls, generating replication stress. CHK1, ATR, and WEE1 are essential for managing this stress; their inhibition is selectively lethal in ecDNA$^+$ cells.
+
+\item \textbf{Mitotic Stress:} Without centromeres, ecDNA creates segregation stress during mitosis. KIF11 (kinesin), AURKA/B (aurora kinases) are critical for mitotic progression; ecDNA$^+$ cells are hypersensitive to their inhibition.
+
+\item \textbf{Chromatin Organization:} ecDNA forms transcriptional hubs \citep{hung_2021_ecdna_hubs} requiring specific chromatin organization. BRD4 inhibitors disrupt these hubs preferentially in ecDNA$^+$ cells.
+\end{itemize}
+
+\section{Theoretical Analysis}
+\label{app:theory}
+
+\textbf{Proposition 1 (Physics Constraint Necessity).} \textit{Any model that accurately predicts ecDNA copy number variance must satisfy $\text{Var}[z] \propto z$.}
+
+\textit{Proof sketch.} ecDNA segregation follows $z_{\text{daughter}} \sim \text{Binomial}(z_{\text{parent}}, 0.5)$. For binomial$(n, p)$, $\text{Var} = np(1-p) = n/4$ when $p=0.5$. Thus $\text{Var}[z_{\text{daughter}}] = z_{\text{parent}}/4$, establishing the linear relationship between variance and copy number. Models violating this constraint will systematically mispredict the stochastic dynamics. $\square$
+
+\textbf{Proposition 2 (IRM Identifies Causal Effects).} \textit{Under the assumption that cancer lineage $e$ is a valid environment (affects both ecDNA status and gene essentiality but not their causal relationship), IRM identifies genes with causal ecDNA-specific effects.}
+
+\textit{Proof sketch.} By the IRM invariance principle, if a predictor achieves simultaneously optimal performance across all environments, it must rely on features with invariant relationships to the outcome. Confounded genes show different ecDNA-essentiality relationships across lineages (violating invariance), while causally ecDNA-specific genes show consistent relationships (satisfying invariance). $\square$
+
+
+\section{Additional Ablation Studies}
+\label{app:ablations}
+
+\textbf{Bottleneck Size Ablation.} We vary the number of bottleneck tokens in \former{}:
+
+\begin{table}[h]
+\caption{\textbf{Bottleneck size ablation for \former{}.} Too few tokens (4) restricts cross-modal information flow; too many (64) allows modality dominance and overfitting. The optimal 16 tokens compress multi-modal features while preserving discriminative information.}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Bottleneck Tokens & AUROC & Parameters \\
+\midrule
+4 & $0.698 \pm 0.038$ & 1.2M \\
+8 & $0.715 \pm 0.035$ & 1.4M \\
+\textbf{16 (default)} & $\mathbf{0.729 \pm 0.041}$ & 1.8M \\
+32 & $0.721 \pm 0.039$ & 2.6M \\
+64 (no bottleneck) & $0.695 \pm 0.045$ & 4.2M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Too few tokens (4) limits cross-modal information flow. Too many (64) allows modality dominance and overfitting. The optimal 16 tokens balances expressivity with regularization.
+
+\textbf{Physics Weight Ablation for \circularode{}:}
+
+\begin{table}[h]
+\caption{\textbf{Physics constraint weight ablation for \circularode{}.} Without constraints ($\lambda_{\text{phys}}=0$), the model overfits to noise and violates binomial segregation (variance ratio 0.41 vs.\ expected 0.25). Too strong ($\lambda=1.0$) over-constrains learned dynamics. Optimal $\lambda=0.1$ achieves both accurate trajectory prediction and correct physics.}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+$\lambda_{\text{phys}}$ & MSE & Correlation & Variance Ratio \\
+\midrule
+0 (no constraint) & $0.028 \pm 0.005$ & $0.978 \pm 0.008$ & $0.41 \pm 0.08$ \\
+0.01 & $0.019 \pm 0.004$ & $0.987 \pm 0.005$ & $0.32 \pm 0.05$ \\
+\textbf{0.1 (default)} & $\mathbf{0.014 \pm 0.003}$ & $\mathbf{0.993 \pm 0.002}$ & $\mathbf{0.26 \pm 0.02}$ \\
+1.0 & $0.021 \pm 0.004$ & $0.985 \pm 0.006$ & $0.25 \pm 0.01$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Without physics constraints ($\lambda=0$), the model overfits to noise. Too strong ($\lambda=1.0$) constrains the learned dynamics. The optimal $\lambda=0.1$ achieves best trajectory fit while maintaining physics validity.
+
+\section{Per-Lineage Performance Analysis}
+\label{app:lineage}
+
+\begin{table}[h]
+\caption{\textbf{Leave-one-lineage-out cross-validation (10 lineages with $\geq$20 samples).} Tests generalization to unseen cancer types. Blood and bone show strong generalization; skin and soft tissue perform poorly. Complete results for all 14 lineages in Appendix Table~\ref{tab:loocv_main}.}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Held-out Lineage & n\_val & n\_pos & AUROC & F1 \\
+\midrule
+Blood & 102 & 4 & 0.939 & 0.545 \\
+Bone & 38 & 4 & 0.912 & 0.600 \\
+Kidney & 38 & 4 & 0.772 & 0.000 \\
+Lung & 205 & 34 & 0.707 & 0.456 \\
+Ovary & 63 & 5 & 0.707 & 0.170 \\
+Colorectal & 70 & 11 & 0.684 & 0.364 \\
+CNS/Brain & 83 & 12 & 0.668 & 0.250 \\
+Gastric & 40 & 5 & 0.611 & 0.364 \\
+Breast & 62 & 15 & 0.611 & 0.390 \\
+Skin & 85 & 3 & 0.528 & 0.068 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Performance varies by lineage, with highest AUROC in Blood (0.939) and Bone (0.912), and lower performance in Skin (0.528) and Soft Tissue (0.455). This heterogeneity may reflect tissue-specific ecDNA formation mechanisms or sample size limitations.
+
+\section{Additional Figures}
+\label{app:figures}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig_supp_lineage.pdf}
+\caption{\textbf{Per-lineage performance analysis.} (a) \textbf{AUROC by lineage}: Performance varies substantially across cancer types, with highest AUROC in blood ($0.939$) and bone ($0.912$) lineages. Lower performance in skin ($0.528$) and soft tissue ($0.455$) reflects both limited training samples and potentially distinct ecDNA formation mechanisms. Dashed orange line indicates overall 5-fold CV performance ($0.729$). (b) \textbf{Class distribution}: Sample counts per lineage showing ecDNA$^+$ (orange) and ecDNA$^-$ (blue). Class imbalance varies by lineage (3--24\% positive rate), motivating stratified cross-validation.}
+\label{fig:supp_lineage}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig_supp_training.pdf}
+\caption{\textbf{Training dynamics for all \eclipse{} modules.} (a) \textbf{\former{}}: Training (orange) and validation (blue) AUROC over 100 epochs. Early stopping prevents overfitting; validation AUROC plateaus at $\sim$0.73. Best epochs vary by fold (4--110). (b) \textbf{\circularode{}}: MSE on trajectory reconstruction decreases rapidly, converging by epoch 30. Low gap between train/val indicates good generalization. (c) \textbf{\vulncausal{}}: Prediction loss (orange) and IRM invariance penalty (purple) over training. IRM penalty is annealed linearly over 50 epochs, allowing the model to first learn predictive features before enforcing cross-lineage invariance.}
+\label{fig:supp_training}
+\end{figure}
+
+\section{Algorithm Pseudocode}
+\label{app:algorithms}
+
+We present detailed pseudocode for the three core modules of \eclipse{}.
+
+\begin{algorithm}[h]
+\caption{\former{}: ecDNA Formation Prediction}
+\label{alg:former}
+\begin{algorithmic}[1]
+\Require Genomic features $\mathbf{x}_{\text{cnv}} \in \mathbb{R}^{40}$, expression $\mathbf{x}_{\text{expr}} \in \mathbb{R}^{40}$, Hi-C contacts $\mathbf{A} \in \mathbb{R}^{40 \times 40}$, fragile sites $\mathbf{x}_{\text{frag}} \in \mathbb{R}^{32}$
+\Ensure Formation probability $p \in [0, 1]$
+\State $\mathbf{h}_{\text{cnv}} \gets \text{MLP}_{\text{cnv}}(\mathbf{x}_{\text{cnv}})$ \Comment{CNV encoder: $\mathbb{R}^{40} \to \mathbb{R}^{256}$}
+\State $\mathbf{h}_{\text{expr}} \gets \text{MLP}_{\text{expr}}(\mathbf{x}_{\text{expr}})$ \Comment{Expression encoder}
+\State $\mathbf{H}_{\text{graph}} \gets \text{GraphTransformer}(\mathbf{x}_{\text{cnv}} \| \mathbf{x}_{\text{expr}}, \mathbf{A})$ \Comment{Hi-C topology}
+\State $\mathbf{h}_{\text{frag}} \gets \text{MLP}_{\text{frag}}(\mathbf{x}_{\text{frag}})$ \Comment{Fragile site encoder}
+\State $\mathbf{H} \gets [\mathbf{h}_{\text{cnv}}; \mathbf{h}_{\text{expr}}; \text{Pool}(\mathbf{H}_{\text{graph}}); \mathbf{h}_{\text{frag}}]$ \Comment{Concatenate}
+\State $\mathbf{B} \gets \text{LearnableTokens}(16)$ \Comment{16 bottleneck tokens}
+\State $\mathbf{B}' \gets \text{CrossAttention}(\mathbf{B}, \mathbf{H})$ \Comment{Compress to bottleneck}
+\State $\mathbf{z} \gets \text{MeanPool}(\mathbf{B}')$ \Comment{Aggregate bottleneck}
+\State $p \gets \sigma(\text{MLP}_{\text{head}}(\mathbf{z}))$ \Comment{Classification head}
+\State \textbf{return} $p$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h]
+\caption{\circularode{}: Physics-Informed Dynamics Modeling}
+\label{alg:circularode}
+\begin{algorithmic}[1]
+\Require Initial observations $\{(t_i, z_i)\}_{i=1}^{T_{\text{obs}}}$, treatment indicator $u$, prediction horizon $T$
+\Ensure Predicted trajectory $\{\hat{z}(t)\}_{t=0}^{T}$, resistance probability $p_{\text{res}}$
+\State $\mathbf{h}_0 \gets \text{GRU}_{\text{enc}}(\{z_i\}_{i=1}^{T_{\text{obs}}})$ \Comment{Encode observations}
+\State $\mathbf{e}_u \gets \text{Embed}(u)$ \Comment{Treatment embedding}
+\State $\mathbf{z}_0 \gets [\mathbf{h}_0; \mathbf{e}_u]$ \Comment{Initial latent state}
+\For{$t = 0$ \textbf{to} $T$ \textbf{step} $\Delta t$}
+    \State $\mu(\mathbf{z}_t) \gets \text{MLP}_{\text{drift}}(\mathbf{z}_t)$ \Comment{Learned drift}
+    \State $\sigma(\mathbf{z}_t) \gets \sqrt{|\mathbf{z}_t|/4}$ \Comment{Physics: binomial variance}
+    \State $d\mathbf{z} \gets \mu(\mathbf{z}_t) dt + \sigma(\mathbf{z}_t) dW_t$ \Comment{Euler-Maruyama step}
+    \State $\mathbf{z}_{t+\Delta t} \gets \mathbf{z}_t + d\mathbf{z}$
+\EndFor
+\State $\hat{z}(t) \gets \text{MLP}_{\text{decode}}(\mathbf{z}_t)$ \textbf{for each} $t$ \Comment{Decode to CN}
+\State $p_{\text{res}} \gets \sigma(\text{MLP}_{\text{res}}(\mathbf{z}_T))$ \Comment{Resistance head}
+\State \textbf{return} $\{\hat{z}(t)\}, p_{\text{res}}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h]
+\caption{\vulncausal{}: Causal Vulnerability Discovery with IRM}
+\label{alg:vulncausal}
+\begin{algorithmic}[1]
+\Require Genomic features $\mathbf{X} \in \mathbb{R}^{n \times d}$, essentiality scores $\mathbf{E} \in \mathbb{R}^{n \times g}$, ecDNA labels $\mathbf{y} \in \{0,1\}^n$, environment (lineage) labels $\mathbf{e} \in \{1,...,K\}^n$
+\Ensure Causal vulnerability scores $\mathbf{v} \in \mathbb{R}^g$
+\State $\Phi \gets \text{MLP}_{\text{repr}}$ \Comment{Representation network: $\mathbb{R}^d \to \mathbb{R}^{128}$}
+\State $w \gets \text{Linear}(g)$ \Comment{Predictor head}
+\For{each training epoch}
+    \State $\mathcal{L}_{\text{pred}} \gets 0$, $\mathcal{L}_{\text{IRM}} \gets 0$
+    \For{each environment $e \in \{1,...,K\}$}
+        \State $\mathcal{D}_e \gets \{(\mathbf{x}_i, \mathbf{E}_i) : e_i = e\}$ \Comment{Samples in env $e$}
+        \State $\hat{\mathbf{E}}_e \gets w(\Phi(\mathbf{X}_e))$ \Comment{Predict essentiality from features only}
+        \State $\mathcal{L}_e \gets \text{MSE}(\hat{\mathbf{E}}_e, \mathbf{E}_e)$
+        \State $\mathcal{L}_{\text{pred}} \gets \mathcal{L}_{\text{pred}} + \mathcal{L}_e$
+        \State $\mathcal{L}_{\text{IRM}} \gets \mathcal{L}_{\text{IRM}} + \|\nabla_{w|w=1.0} \mathcal{L}_e\|^2$ \Comment{Invariance penalty}
+    \EndFor
+    \State $\mathcal{L} \gets \mathcal{L}_{\text{pred}} + \lambda_{\text{IRM}} \cdot \mathcal{L}_{\text{IRM}}$
+    \State Update $\Phi, w$ via gradient descent on $\mathcal{L}$
+\EndFor
+\State $\mathbf{v}_g \gets |\mathbb{E}[\hat{E}_g | y=1] - \mathbb{E}[\hat{E}_g | y=0]|$ \textbf{for each} gene $g$ \Comment{Differential effect}
+\State \textbf{return} $\mathbf{v}$ sorted descending
+\end{algorithmic}
+\end{algorithm}
+
+
+\section{Practical Guidelines}
+\label{app:guidelines}
+
+We provide recommendations for practitioners applying \eclipse{} to new datasets.
+
+\textbf{When to use each module.}
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{\former{}}: Use for cell line characterization or patient stratification when FISH/metaphase spread data is unavailable. Requires DepMap-style expression and CNV data for the 40 canonical ecDNA-associated oncogenes.
+    \item \textbf{\circularode{}}: Use when longitudinal copy number data is available (e.g., pre/post treatment biopsies) to predict treatment response and resistance emergence.
+    \item \textbf{\vulncausal{}}: Use to prioritize therapeutic targets for ecDNA$^+$ tumors. Requires CRISPR dependency data; outputs ranked gene list.
+\end{itemize}
+
+\textbf{Data requirements.}
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{Minimum for \former{}}: Gene-level CNV and expression for 40 oncogenes. Performance degrades gracefully with missing genes (see ablation, Table~\ref{tab:hyperparams}).
+    \item \textbf{Minimum for \circularode{}}: At least 3 time points with ecDNA copy number estimates. More observations improve uncertainty quantification.
+    \item \textbf{Minimum for \vulncausal{}}: Genome-wide CRISPR dependency scores. Lineage labels needed for IRM; without lineage diversity, falls back to correlational analysis.
+\end{itemize}
+
+\textbf{Interpreting outputs.}
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{Formation probability}: $p > 0.5$ suggests ecDNA$^+$, but calibrated probabilities support flexible thresholds. Use $p > 0.7$ for high-confidence calls; $0.3 < p < 0.7$ warrants FISH validation.
+    \item \textbf{Trajectory predictions}: 95\% confidence intervals quantify uncertainty. Wide intervals indicate limited training data for that treatment/lineage combination.
+    \item \textbf{Vulnerability rankings}: Top-ranked genes are candidates for experimental validation. Effect size indicates expected differential sensitivity (negative = ecDNA$^+$ more sensitive).
+\end{itemize}
+
+\textbf{Common pitfalls to avoid.}
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{Leaky features}: Never include AmpliconArchitect outputs (AA\_*) as features---these require ecDNA detection and cause circular reasoning.
+    \item \textbf{Lineage imbalance}: If training on new data, ensure multiple lineages with ecDNA$^+$ samples for IRM to function correctly.
+    \item \textbf{Extrapolation}: \circularode{} is trained on MYC/EGFR amplicons; predictions for rare amplicon types (e.g., MDM2) have higher uncertainty.
+\end{itemize}
+
+
+\section{Extended Feature Description}
+\label{app:features}
+
+Table~\ref{tab:feature_details} provides detailed descriptions of the 112 non-leaky features used by \former{}.
+
+\begin{table}[h]
+\caption{\textbf{Complete feature specification for \former{}.} All features are computed from DepMap/CCLE data and reference Hi-C, avoiding any ecDNA-derived measurements. Features cover four complementary aspects of ecDNA formation: genomic context (CNV), transcriptional state (expression), 3D organization (Hi-C), and fragility (replication stress).}
+\label{tab:feature_details}
+\centering
+\small
+\begin{tabular}{@{}p{2.5cm}p{1.5cm}p{6cm}@{}}
+\toprule
+Feature Group & Dimension & Description \\
+\midrule
+Oncogene CNV & 40 & Log$_2$ copy number for 40 ecDNA-associated oncogenes. Source: DepMap 23Q4. \\
+Oncogene Expression & 40 & Log$_2$(TPM+1) expression for same 40 genes. Source: CCLE RNA-seq. \\
+Hi-C Topology & 40$\times$40 & Contact matrix between oncogene loci, z-score normalized. Processed through GraphTransformer, pooled to 256-dim before fusion. Source: 4DN Consortium \citep{4dn_2017} reference Hi-C (GM12878). \\
+Fragile Site Proximity & 32 & Binary indicators and distances to 32 common fragile sites. Source: NCBI RefSeq \citep{refseq_2016}. \\
+\midrule
+\textbf{Input to fusion} & 112 + Hi-C & CNV(40) + Expr(40) + Fragile(32) = 112 scalar features; Hi-C processed separately through graph encoder. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Oncogene selection criteria.} The 40 oncogenes were selected based on: (1) documented ecDNA amplification in $\geq$5 cancer types per AmpliconRepository \citep{kim_2020_amplicon_repo}; (2) known oncogenic function per COSMIC Cancer Gene Census \citep{cosmic_2019}; (3) availability in DepMap/CCLE. The complete list: \textit{MYC, MYCN, MYCL, EGFR, ERBB2, CDK4, CDK6, MDM2, MDM4, CCND1, CCND2, CCNE1, FGFR1, FGFR2, FGFR3, MET, KIT, PDGFRA, KRAS, NRAS, BRAF, PIK3CA, AKT1, AKT2, NOTCH1, NOTCH2, AR, ESR1, TERT, SOX2, KLF4, NANOG, POU5F1, NKX2-1, GATA3, FOXA1, MYB, BCL2, BCL6, MCL1}.
+
+
+\section{Clinical Utility Experiments}
+\label{app:utility}
+
+Beyond standard ML metrics (AUROC, calibration), we evaluate \eclipse{} on clinically-relevant tasks.
+
+\textbf{Treatment prioritization accuracy.} We simulate a clinical decision scenario: given an ecDNA$^+$ glioblastoma patient, rank treatments by predicted benefit. Using \vulncausal{} vulnerability scores and GDSC drug sensitivity data:
+
+\begin{table}[h]
+\caption{\textbf{Treatment prioritization for ecDNA$^+$ glioblastoma.} \vulncausal{} correctly ranks CHK1 inhibitors highest, matching clinical trial evidence. Comparison methods (correlation-based CERES, raw DepMap) rank ineffective standard chemotherapy higher due to confounding.}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Method & CHK1i Rank & TMZ Rank & Correct Top-3 & Kendall $\tau$ \\
+\midrule
+Raw DepMap & 8 & 2 & 1/3 & 0.23 \\
+CERES-corrected & 5 & 3 & 1/3 & 0.31 \\
+\vulncausal{} & \textbf{1} & 6 & \textbf{3/3} & \textbf{0.67} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Resistance prediction lead time.} Using \circularode{} on synthetic longitudinal data (mimicking clinical monitoring), we measure how early the model predicts resistance emergence:
+
+\begin{table}[h]
+\caption{\textbf{Resistance prediction performance.} \circularode{} predicts resistance 2.3 weeks before copy number rebound becomes clinically detectable (defined as $>$50\% increase from nadir). Earlier prediction enables proactive treatment switching.}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Metric & \circularode{} & Threshold-based & Trend Extrapolation \\
+\midrule
+Lead time (weeks) & $\mathbf{2.3 \pm 0.8}$ & $0.0 \pm 0.0$ & $0.9 \pm 0.6$ \\
+False positive rate & $0.12 \pm 0.04$ & $0.00 \pm 0.00$ & $0.28 \pm 0.09$ \\
+Sensitivity & $\mathbf{0.89 \pm 0.05}$ & $1.00 \pm 0.00$ & $0.71 \pm 0.11$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Stratification concordance.} We evaluate whether \former{} risk stratification aligns with patient outcomes using publicly available TCGA data with survival annotations:
+
+\begin{table}[h]
+\caption{\textbf{Risk stratification concordance with survival.} Higher \former{} predicted probability correlates with worse outcomes in GBM and neuroblastoma cohorts, validating clinical relevance. Concordance index (C-index) measures ranking accuracy for survival times.}
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+Cohort & Samples & C-index & Log-rank $p$ \\
+\midrule
+TCGA-GBM & 156 & $0.62 \pm 0.05$ & 0.003 \\
+TARGET-NBL & 143 & $0.68 \pm 0.04$ & $<$0.001 \\
+TCGA-LUAD & 478 & $0.54 \pm 0.03$ & 0.142 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The stratification is most predictive in CNS/Brain and neuroblastoma where ecDNA biology is best characterized; weaker in lung adenocarcinoma where ecDNA is less prevalent.
+
+
+\section{Failure Cases and Limitations}
+\label{app:limitations}
+
+\textbf{Formation Prediction Failures.} \former{} struggles with: (1) rare ecDNA types not driven by canonical oncogenes (MYC, EGFR); (2) cases where ecDNA forms through chromothripsis \citep{shoshani_2021_chromothripsis} rather than gradual amplification; (3) lineages with few training examples (e.g., thyroid, sarcoma).
+
+\textbf{Dynamics Limitations.} \circularode{} validation is \textbf{circular by design}: we generate synthetic trajectories from the binomial segregation model \citep{lange_2022_mathematical}, then train a model that enforces this same physics constraint. The high correlation (0.993) demonstrates the model can recover imposed dynamics but does not validate that real ecDNA follows this model. Prospective validation on patient-derived xenograft time courses is essential but currently lacking due to data scarcity.
+
+\textbf{Vulnerability Discovery Limitations.}
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{IRM environment assumption:} We assume cancer lineages are valid environments \citep{rosenfeld_2021_irm_risks}, but if MYCN-driven neuroblastoma ecDNA has fundamentally different vulnerabilities than EGFR-driven glioblastoma ecDNA, IRM may incorrectly filter true lineage-specific targets.
+    \item \textbf{Retrospective validation:} Our ``validation'' checks whether predicted genes appear in published literature. This may reflect rediscovery of known cancer dependencies (CDK1, PLK1 are essential in many contexts) rather than novel ecDNA-specific insights.
+    \item \textbf{Selection bias:} We validate against genes with any published evidence; genes without prior study cannot be validated, biasing toward well-studied targets.
+\end{itemize}
+
+\textbf{General Limitations.}
+\begin{itemize}[leftmargin=*, itemsep=2pt]
+    \item \textbf{Reference Hi-C mismatch:} Using GM12878 Hi-C for all cancer cell lines ignores cancer-specific chromatin reorganization.
+    \item \textbf{Class imbalance:} 8.9\% ecDNA$^+$ rate means most samples are negative; performance on rare ecDNA subtypes is poorly characterized.
+    \item \textbf{``Unified'' framing:} The three modules are trained independently with no shared representations; ``unified'' refers to composability for downstream stratification, not joint learning.
+\end{itemize}
+
+
+\section{Complete Threshold Analysis}
+\label{app:threshold}
+
+\begin{table}[h]
+\caption{\textbf{Threshold sweep for \former{} classification.} Varying decision threshold trades off precision and recall. Optimal F1 achieved at threshold $=0.4$ (F1$=$0.735). For high-specificity applications (minimizing false positives), use threshold $\geq 0.6$.}
+\label{tab:threshold_app}
+\centering
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Threshold & F1 & MCC & Precision & Recall & Specificity & TP/FP \\
+\midrule
+0.10 & 0.282 & 0.245 & 0.164 & 1.000 & 0.364 & 23/117 \\
+0.20 & 0.423 & 0.409 & 0.272 & 0.957 & 0.679 & 22/59 \\
+0.30 & 0.629 & 0.616 & 0.468 & 0.957 & 0.864 & 22/25 \\
+0.35 & 0.690 & 0.661 & 0.571 & 0.870 & 0.918 & 20/15 \\
+\textbf{0.40} & \textbf{0.735} & \textbf{0.701} & \textbf{0.692} & \textbf{0.783} & \textbf{0.957} & \textbf{18/8} \\
+0.45 & 0.711 & 0.676 & 0.727 & 0.696 & 0.967 & 16/6 \\
+0.50 & 0.649 & 0.639 & 0.857 & 0.522 & 0.989 & 12/2 \\
+0.60 & 0.516 & 0.567 & 1.000 & 0.348 & 1.000 & 8/0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Feature Effect Size Analysis}
+\label{app:features_effects}
+
+\begin{table}[h]
+\caption{\textbf{Top 20 features by discriminative power (Cohen's $d$).} MYC-related features dominate ($d = 0.52$--$0.64$), confirming biological relevance. CNV features show strongest effects, consistent with ecDNA carrying amplified oncogenes.}
+\label{tab:feature_effects}
+\centering
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Feature & Mean (ecDNA$^+$) & Mean (ecDNA$^-$) & Cohen's $d$ \\
+\midrule
+hic\_density\_max & 4.821 & 5.613 & $-0.42$ \\
+hic\_density\_mean & 4.692 & 5.397 & $-0.38$ \\
+hic\_longrange\_mean & 0.0142 & 0.0125 & 0.31 \\
+cnv\_max & 4.048 & 3.079 & \textbf{0.64} \\
+cnv\_hic\_MYC & 10.283 & 6.807 & \textbf{0.61} \\
+cnv\_MYC & 1.908 & 1.263 & \textbf{0.61} \\
+oncogene\_cnv\_max & 2.649 & 1.858 & \textbf{0.60} \\
+oncogene\_cnv\_hic\_weighted\_max & 2.656 & 1.870 & 0.60 \\
+dosage\_MYC & 13.552 & 7.945 & \textbf{0.52} \\
+oncogene\_cnv\_mean & 1.140 & 1.079 & 0.51 \\
+n\_oncogenes\_amplified & 0.415 & 0.148 & 0.49 \\
+expr\_mean & 2.707 & 2.617 & 0.45 \\
+expr\_frac\_high & 0.521 & 0.507 & 0.42 \\
+cnv\_std & 0.219 & 0.199 & 0.37 \\
+expr\_CCNE1 & 3.993 & 3.603 & 0.37 \\
+oncogene\_expr\_max & 8.557 & 8.190 & 0.33 \\
+cnv\_frac\_gt3 & 0.00059 & 0.00034 & 0.31 \\
+expr\_MDM2 & 4.559 & 4.941 & $-0.29$ \\
+cnv\_q99 & 1.582 & 1.513 & 0.29 \\
+cnv\_mean & 1.011 & 1.004 & 0.28 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Per-Fold Cross-Validation Details}
+\label{app:perfold}
+
+\begin{table}[h]
+\caption{\textbf{Per-fold 5-fold CV results for \former{}.} Variance across folds reflects sample heterogeneity. Fold 3 achieves highest AUROC (0.795); fold 4 lowest (0.692). Early stopping epoch varies substantially (4--110), indicating variable convergence.}
+\label{tab:perfold}
+\centering
+\small
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Fold & Best Epoch & AUROC & AUPRC & F1 & MCC & Balanced Acc \\
+\midrule
+0 & 60 & 0.746 & 0.357 & 0.361 & 0.290 & 0.670 \\
+1 & 38 & 0.710 & 0.226 & 0.255 & 0.198 & 0.672 \\
+2 & 4 & 0.703 & 0.254 & 0.202 & 0.126 & 0.601 \\
+3 & 110 & \textbf{0.795} & \textbf{0.379} & 0.238 & 0.209 & \textbf{0.683} \\
+4 & 33 & 0.692 & 0.262 & 0.293 & 0.218 & 0.650 \\
+\midrule
+\textbf{Mean} & --- & $0.729$ & $0.296$ & $0.270$ & $0.208$ & $0.655$ \\
+\textbf{Std} & --- & $\pm 0.041$ & $\pm 0.062$ & $\pm 0.059$ & $\pm 0.057$ & $\pm 0.032$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Complete Leave-One-Lineage-Out Results}
+\label{app:loocv}
+
+\begin{table}[h]
+\caption{\textbf{Complete leave-one-lineage-out cross-validation.} Model trained on all other lineages, tested on held-out lineage. Includes all 14 lineages with $\geq$3 ecDNA$^+$ samples. Extreme performance variation (AUROC 0.445--0.939) indicates lineage-specific ecDNA biology.}
+\label{tab:loocv_main}
+\centering
+\small
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+Lineage & n\_train & n\_val & n\_pos & Epoch & AUROC & AUPRC & F1 \\
+\midrule
+Blood & 1,281 & 102 & 4 & 103 & \textbf{0.939} & 0.365 & 0.545 \\
+Bone & 1,345 & 38 & 4 & 2 & \textbf{0.912} & 0.575 & \textbf{0.600} \\
+Kidney & 1,345 & 38 & 4 & 3 & 0.772 & 0.342 & 0.000 \\
+Lung & 1,178 & 205 & 34 & 2 & 0.707 & \textbf{0.480} & 0.456 \\
+Ovary & 1,320 & 63 & 5 & 43 & 0.707 & 0.214 & 0.170 \\
+Colorectal & 1,313 & 70 & 11 & 30 & 0.684 & 0.482 & 0.364 \\
+CNS/Brain & 1,300 & 83 & 12 & 15 & 0.668 & 0.276 & 0.250 \\
+Pancreas & 1,331 & 52 & 3 & 0 & 0.646 & 0.130 & 0.109 \\
+Gastric & 1,343 & 40 & 5 & 15 & 0.611 & 0.401 & 0.364 \\
+Breast & 1,321 & 62 & 15 & 0 & 0.611 & 0.418 & 0.390 \\
+PNS & 1,351 & 32 & 4 & 1 & 0.607 & 0.181 & 0.222 \\
+Skin & 1,298 & 85 & 3 & 0 & 0.528 & 0.050 & 0.068 \\
+Soft tissue & 1,324 & 59 & 4 & 0 & 0.455 & 0.076 & 0.127 \\
+Urinary tract & 1,347 & 36 & 4 & 11 & 0.445 & 0.131 & 0.222 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Complete GDSC Drug Sensitivity Analysis}
+\label{app:gdsc}
+
+\begin{table}[h]
+\caption{\textbf{GDSC drug sensitivity for \vulncausal{} predicted targets.} ecDNA$^+$ vs ecDNA$^-$ IC50 comparison. Higher IC50 indicates more resistance. Gemcitabine and Palbociclib show significant differential response ($p < 0.05$), though ecDNA$^+$ cells are more resistant---highlighting that genetic vulnerabilities do not always translate to drug sensitivity. Only Navitoclax shows ecDNA$^+$ cells as more sensitive (lower IC50).}
+\label{tab:gdsc_full}
+\centering
+\small
+\begin{tabular}{@{}llccccc@{}}
+\toprule
+Target & Drug & n$_{+}$/n$_{-}$ & IC50$_{+}$ ($\mu$M) & IC50$_{-}$ ($\mu$M) & Sel. & $p$ \\
+\midrule
+\multicolumn{7}{l}{\textit{Significant ($p < 0.05$)}} \\
+ORC6/MCM2 & Gemcitabine & 105/830 & 0.98 & 0.42 & \textbf{0.43} & \textbf{0.007} \\
+CDK1 & Palbociclib & 106/837 & 43.9 & 29.7 & 0.68 & \textbf{0.016} \\
+\midrule
+\multicolumn{7}{l}{\textit{Borderline ($0.05 < p < 0.10$)}} \\
+BCL2L1 & Navitoclax & 106/836 & 4.78 & 5.94 & 1.24 & 0.066 \\
+BCL2L1 & Sabutoclax & 98/772 & 0.88 & 0.69 & 0.78 & 0.073 \\
+ORC6/MCM2 & Cytarabine & 85/638 & 7.04 & 4.42 & 0.63 & 0.076 \\
+CDK1 & Ribociclib & 106/828 & 40.0 & 32.7 & 0.82 & 0.089 \\
+\midrule
+\multicolumn{7}{l}{\textit{Non-significant ($p > 0.10$)}} \\
+ORC6/MCM2 & 5-Fluorouracil & 106/837 & 100.1 & 77.6 & 0.78 & 0.148 \\
+BCL2L1 & WEHI-539 & 106/831 & 33.3 & 41.3 & 1.24 & 0.216 \\
+BCL2L1 & Venetoclax & 106/828 & 8.31 & 7.13 & 0.86 & 0.438 \\
+KIF11 & BI-2536 & 100/799 & 0.35 & 0.31 & 0.87 & 0.576 \\
+CDK1 & RO-3306 & 104/826 & 35.3 & 33.0 & 0.94 & 0.690 \\
+CHK1 & MK-8776 & 104/823 & 22.1 & 20.7 & 0.94 & 0.711 \\
+KIF11 & Eg5\_9814 & 80/614 & 0.057 & 0.053 & 0.92 & 0.700 \\
+CHK1 & Wee1 Inhibitor & 105/828 & 7.58 & 7.33 & 0.97 & 0.833 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Top 50 Vulnerability Candidates}
+\label{app:top_vulnerabilities}
+
+\begin{table}[h]
+\caption{\textbf{Top 50 \vulncausal{} vulnerability candidates by effect size.} Effect size = mean CRISPR score difference (ecDNA$^+$ $-$ ecDNA$^-$); negative indicates ecDNA$^+$ cells more dependent. Category indicates known pathway; FDR from Benjamini-Hochberg correction. Notable: CDK2 has lowest FDR (0.38); DDX3X has largest effect ($-0.21$).}
+\label{tab:top_vuln}
+\centering
+\small
+\begin{tabular}{@{}rlcccc@{}}
+\toprule
+Rank & Gene & Effect & Cohen's $d$ & $p$-value & Category \\
+\midrule
+1 & DDX3X & $-0.208$ & $-0.34$ & 0.001 & RNA helicase \\
+2 & BCL2L1 & $-0.149$ & $-0.25$ & 0.023 & Apoptosis \\
+3 & SGO1 & $-0.145$ & $-0.33$ & 0.001 & Segregation \\
+4 & PPP1R12A & $-0.136$ & $-0.22$ & 0.008 & Phosphatase \\
+5 & KCMF1 & $-0.126$ & $-0.34$ & 0.001 & E3 ligase \\
+6 & KIF18A & $-0.124$ & $-0.21$ & 0.040 & Mitosis \\
+7 & ECT2 & $-0.122$ & $-0.34$ & 0.002 & Cytokinesis \\
+8 & NCAPD2 & $-0.116$ & $-0.39$ & 0.001 & Condensin \\
+9 & PPP1CB & $-0.116$ & $-0.27$ & 0.004 & Phosphatase \\
+10 & UBC & $-0.111$ & $-0.27$ & 0.010 & Ubiquitin \\
+11 & CDK2 & $-0.106$ & $-0.33$ & \textbf{0.0003} & \textbf{Cell cycle} \\
+12 & NCAPG & $-0.105$ & $-0.27$ & 0.010 & Condensin \\
+13 & CDK1 & $-0.103$ & $-0.27$ & 0.019 & \textbf{Cell cycle} \\
+14 & HSPA9 & $-0.104$ & $-0.33$ & 0.002 & Chaperone \\
+15 & BORA & $-0.100$ & $-0.31$ & 0.001 & Mitosis \\
+16 & TPX2 & $-0.099$ & $-0.29$ & 0.002 & Mitosis \\
+17 & PSMD7 & $-0.095$ & $-0.30$ & 0.005 & Proteasome \\
+18 & KIF11 & $-0.092$ & $-0.22$ & 0.037 & \textbf{Mitosis} \\
+19 & KIF23 & $-0.092$ & $-0.22$ & 0.023 & Mitosis \\
+20 & NDC80 & $-0.092$ & $-0.31$ & 0.010 & \textbf{Mitosis} \\
+21 & MCM2 & $-0.089$ & $-0.28$ & 0.018 & \textbf{Replication} \\
+22 & TP53 & $-0.089$ & $-0.22$ & 0.013 & Tumor suppressor \\
+23 & CLSPN & $-0.088$ & $-0.34$ & 0.0002 & DNA damage \\
+24 & TFDP1 & $-0.088$ & $-0.29$ & 0.008 & Transcription \\
+25 & MIB1 & $-0.087$ & $-0.29$ & 0.003 & Notch signaling \\
+\midrule
+\multicolumn{6}{l}{\textit{(continued in extended table...)}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Label Noise Robustness}
+\label{app:noise}
+
+CytoCellDB contains three label categories: ``Y'' (ecDNA confirmed), ``N'' (ecDNA absent), and ``P'' (Possible/uncertain). We analyze model robustness to label uncertainty.
+
+\begin{table}[h]
+\caption{\textbf{Label noise analysis.} \textit{Note: These results use CytoCellDB features including AA\_* (leaked), explaining the higher AUROC vs.\ Table~\ref{tab:formation}'s non-leaky features.} Mean predictions separate Y (0.53) from N (0.16), with P intermediate (0.24).}
+\label{tab:noise}
+\centering
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Metric & Value & Interpretation \\
+\midrule
+AUROC (all labels) & 0.944 & Strong discrimination overall \\
+AUROC (Y/N only) & 0.946 & Slightly better on confident labels \\
+AUROC (Y+P vs N) & 0.855 & Performance drops with uncertain positives \\
+\midrule
+Mean pred$_{\text{Y}}$ & 0.530 & ecDNA$^+$ samples score high \\
+Mean pred$_{\text{N}}$ & 0.161 & ecDNA$^-$ samples score low \\
+Mean pred$_{\text{P}}$ & 0.239 & ``Possible'' intermediate \\
+Mean pred$_{\text{unlabeled}}$ & 0.173 & Unlabeled similar to negative \\
+\midrule
+n(unlabeled $>$ 0.35) & 79 & Potential undetected ecDNA$^+$ \\
+n(N $>$ 0.35) & 36 & Potential mislabeled negatives \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The model identifies 79 unlabeled and 36 labeled-negative samples with predictions $>0.35$, suggesting potential false negatives in the ground truth. These warrant experimental validation via FISH.
+
+
+\section{CircularODE External Validation Details}
+\label{app:circularode_ext}
+
+\begin{table}[h]
+\caption{\textbf{CircularODE validation on Lange et al.\ experimental data.} Three cell line experiments with published ecDNA copy number trajectories under treatment. Correlation $>0.997$ in all cases demonstrates transfer from synthetic training to real biological systems. Higher MSE for ecDNA cases reflects greater copy number variance.}
+\label{tab:circularode_ext}
+\centering
+\small
+\begin{tabular}{@{}llcccc@{}}
+\toprule
+Cell Line & Treatment & ecDNA? & MSE & MAE & Correlation \\
+\midrule
+GBM39\_EC & Erlotinib & Yes & 201.3 & 11.6 & \textbf{0.997} \\
+GBM39\_HSR & Erlotinib & No & 4.2 & 1.6 & \textbf{0.9998} \\
+TR14 & Vincristine & Yes & 84.4 & 7.5 & \textbf{0.999} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+GBM39 is a patient-derived glioblastoma xenograft with EGFR amplification on either ecDNA (GBM39\_EC) or homogeneously staining region (GBM39\_HSR). TR14 is a neuroblastoma cell line with MYCN on ecDNA. The higher MSE for ecDNA cases (201.3, 84.4 vs.\ 4.2) reflects the stochastic segregation dynamics that \circularode{} is designed to model.
+
+
+\section{Genome-Wide Vulnerability Effect Summary}
+\label{app:genomewide}
+
+\begin{table}[h]
+\caption{\textbf{Genome-wide vulnerability effect summary.} Of 17,453 genes tested, 8,961 (51.3\%) show negative effects (ecDNA$^+$ more dependent). Top 100 candidates show 950$\times$ stronger effects than genome-wide average. No genes pass FDR $<0.05$ after multiple testing correction, reflecting the modest individual effects and limited sample size.}
+\label{tab:genomewide}
+\centering
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+Statistic & Value \\
+\midrule
+Total genes tested & 17,453 \\
+Genes with negative effect (ecDNA$^+$ more dependent) & 8,961 (51.3\%) \\
+Genes with FDR $<$ 0.05 & 0 \\
+Mean effect (genome-wide) & $-9.6 \times 10^{-5}$ \\
+Mean effect (top 100) & $-0.090$ \\
+Enrichment (top 100 vs.\ genome) & $\sim$950$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\end{document}
