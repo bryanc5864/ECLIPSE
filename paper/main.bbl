@@ -76,7 +76,7 @@ Jacob Fessler, Stephanie Ting, Hong Yi, Santiago Haase, Jingting Chen, Saygin
 
 \bibitem[Gutteridge et~al.(2016)Gutteridge, Ndiaye, Liu, and
   Ahmad]{gutteridge_2016_plk1}
-Rebecca E.~A. Gutteridge, Michelle~A. Ndiaye, Xiaoqing Liu, and Nihal Ahmad.
+Rosie Elizabeth~Ann Gutteridge, Mary~Ann Ndiaye, Xiaoqi Liu, and Nihal Ahmad.
 \newblock Plk1 inhibitors in cancer therapy: From laboratory to clinics.
 \newblock \emph{Molecular Cancer Therapeutics}, 15\penalty0 (7):\penalty0
   1427--1435, 2016.
@@ -166,12 +166,17 @@ Morgane Macheret, Rahul Bhowmick, Katarzyna Sobkowiak, Laura Padayachy,
 \newblock \doi{10.1038/s41422-020-0358-x}.
 
 \bibitem[Meyers et~al.(2017)Meyers, Bryan, McFarland, Weir, Sizemore, Xu,
-  Dharia, Montgomery, Cowley, Pantel, Goodale, Lee, Ali, Jiang, Luber,
-  Tsherniak, Hahn, Root, and Golub]{meyers_2017_ceres}
+  Dharia, Montgomery, Cowley, Pantel, Goodale, Lee, Ali, Jiang, Lubonja,
+  Harrington, Strickland, Wu, Hawes, Zhivich, Wyatt, Kalani, Chang, Okamoto,
+  Stegmaier, Golub, Boehm, Vazquez, Root, Hahn, and
+  Tsherniak]{meyers_2017_ceres}
 Robin~M. Meyers, Jordan~G. Bryan, James~M. McFarland, Barbara~A. Weir, Ann~E.
   Sizemore, Han Xu, Neekesh~V. Dharia, Phillip~G. Montgomery, Glenn~S. Cowley,
   Sasha Pantel, Amy Goodale, Yenarae Lee, Levi~D. Ali, Guozhi Jiang, Rakela
-  Luber, Aviad Tsherniak, William~C. Hahn, David~E. Root, and Todd~R. Golub.
+  Lubonja, William~F. Harrington, Matthew Strickland, Ting Wu, Derek~C. Hawes,
+  Victor~A. Zhivich, Meghan~R. Wyatt, Zohra Kalani, Jaime~J. Chang, Michael
+  Okamoto, Kimberly Stegmaier, Todd~R. Golub, Jesse~S. Boehm, Francisca
+  Vazquez, David~E. Root, William~C. Hahn, and Aviad Tsherniak.
 \newblock Computational correction of copy number effect improves specificity
   of {CRISPR}--{Cas9} essentiality screens in cancer cells.
 \newblock \emph{Nature Genetics}, 49\penalty0 (12):\penalty0 1779--1784, 2017.
@@ -226,8 +231,8 @@ Elan Rosenfeld, Pradeep Ravikumar, and Andrej Risteski.
 
 \bibitem[Shen et~al.(2019)Shen, Zhao, Ju, Wang, Peng, Labrie, Yap, Mills, and
   Peng]{shen_2019_atr}
-Jian Shen, Wei Zhao, Zhongbo Ju, Lingyan Wang, Yi~Peng, Marilyne Labrie,
-  Timothy~A. Yap, Gordon~B. Mills, and Gang Peng.
+Jianfeng Shen, Wei Zhao, Zhenlin Ju, Lulu Wang, Yang Peng, Marilyne Labrie,
+  Timothy~A. Yap, Gordon~B. Mills, and Guang Peng.
 \newblock {PARPi} triggers the {STING}-dependent immune response and enhances
   the therapeutic efficacy of immune checkpoint blockade independent of
   {BRCAness}.
@@ -238,8 +243,8 @@ Jian Shen, Wei Zhao, Zhongbo Ju, Lingyan Wang, Yi~Peng, Marilyne Labrie,
   Kim, Fang, Castillon, Yu, Li, Sun, Ellisman, Ren, Campbell, and
   Cleveland]{shoshani_2021_chromothripsis}
 Ofer Shoshani, Simon~F. Brunner, Rona Yaeger, Peter Ly, Yael Nechemia-Arbely,
-  Dong~Hyun Kim, Rui Fang, Guillaume~A. Castillon, Miao Yu, Julia S.~Z. Li,
-  Yanwen Sun, Mark~H. Ellisman, Bing Ren, Peter~J. Campbell, and Don~W.
+  Dong~Hyun Kim, Rongxin Fang, Guillaume~A. Castillon, Miao Yu, Julia S.~Z. Li,
+  Ying Sun, Mark~H. Ellisman, Bing Ren, Peter~J. Campbell, and Don~W.
   Cleveland.
 \newblock Chromothripsis drives the evolution of gene amplification in cancer.
 \newblock \emph{Nature}, 591\penalty0 (7848):\penalty0 137--141, 2021.
@@ -261,13 +266,13 @@ Aravind Subramanian, Pablo Tamayo, Vamsi~K. Mootha, Sayan Mukherjee,
   Marinov, Li, Hanoian, Tse, Mojica, Hansen, Plum, Steffy, Milutinovic, Meyer,
   Luebeck, Wang, Zhang, Altemose, Curtis, Greenleaf, Bafna, Benkovic,
   Pinkerton, Kasibhatla, Hassig, Mischel, and Chang]{yi_2024_chk1_ecdna}
-Jun Tang, Natasha~E. Weiser, Guiping Wang, Shulin Chowdhry, Edward~J. Curtis,
-  Yue Zhao, Ivy Tsz-Lo Wong, Georgi~K. Marinov, Rui Li, Philip Hanoian, Eric
-  Tse, Silvia~G. Mojica, Ryan Hansen, Joshua Plum, Adrienne Steffy, Sanja
-  Milutinovic, Scott~T. Meyer, Jens Luebeck, Yan Wang, Shu Zhang, Nicolas
-  Altemose, Christina Curtis, William~J. Greenleaf, Vineet Bafna, Stephen~J.
-  Benkovic, Anthony~B. Pinkerton, Shailaja Kasibhatla, Christian~A. Hassig,
-  Paul~S. Mischel, and Howard~Y. Chang.
+Jun Tang, Natasha~E. Weiser, Guiping Wang, Sudhir Chowdhry, Ellis~J. Curtis,
+  Yanding Zhao, Ivy Tsz-Lo Wong, Georgi~K. Marinov, Rui Li, Philip Hanoian,
+  Edison Tse, Salvador~Garcia Mojica, Ryan Hansen, Joshua Plum, Auzon Steffy,
+  Snezana Milutinovic, S.~Todd Meyer, Jens Luebeck, Yanbo Wang, Shu Zhang,
+  Nicolas Altemose, Christina Curtis, William~J. Greenleaf, Vineet Bafna,
+  Stephen~J. Benkovic, Anthony~B. Pinkerton, Shailaja Kasibhatla, Christian~A.
+  Hassig, Paul~S. Mischel, and Howard~Y. Chang.
 \newblock Enhancing transcription--replication conflict targets
   ec{DNA}-positive cancers.
 \newblock \emph{Nature}, 635\penalty0 (8037):\penalty0 210--218, 2024.
@@ -332,10 +337,13 @@ Roel G.~W. Verhaak, Vineet Bafna, and Paul~S. Mischel.
 \newblock \doi{10.1038/s41568-019-0128-6}.
 
 \bibitem[Wilkinson et~al.(2007)Wilkinson, Odedra, Heaton, Wedge, Keen, Crafter,
-  Foster, Brady, Bigley, Brown, Byth, and Hickson]{wilkinson_2007_aurkb}
-Richard~W. Wilkinson, Rajesh Odedra, Simon~P. Heaton, Stephen~R. Wedge,
-  Nicola~J. Keen, Claire Crafter, John~R. Foster, Marian~C. Brady, Alison
-  Bigley, Elaine Brown, Kate~F. Byth, and Ian Hickson.
+  Foster, Brady, Bigley, Brown, Byth, Barrass, Mundt, Foote, Heron, Jung,
+  Mortlock, Boyle, and Green]{wilkinson_2007_aurkb}
+Robert~W. Wilkinson, Rajesh Odedra, Simon~P. Heaton, Stephen~R. Wedge,
+  Nicholas~J. Keen, Claire Crafter, John~R. Foster, Madeleine~C. Brady, Alison
+  Bigley, Elaine Brown, Kate~F. Byth, Nigel~C. Barrass, Kirsten~E. Mundt,
+  Kevin~M. Foote, Nicola~M. Heron, Frederic~H. Jung, Andrew~A. Mortlock,
+  F.~Thomas Boyle, and Stephen Green.
 \newblock {AZD1152}, a selective inhibitor of {Aurora B} kinase, inhibits human
   tumor xenograft growth by inducing apoptosis.
 \newblock \emph{Clinical Cancer Research}, 13\penalty0 (12):\penalty0
