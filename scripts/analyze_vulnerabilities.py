@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Module 3: VulnCausal - Differential Dependency Analysis
+module 3: VulnCausal - Differential Dependency Analysis
 
 Find genes that selectively kill ecDNA+ cancer cells using CRISPR data.
 This is the baseline analysis before building the full causal model.
@@ -30,7 +30,7 @@ def load_ecdna_labels(data_dir: Path):
     logger.info("Loading ecDNA labels...")
     cyto = pd.read_excel(data_dir / "cytocell_db" / "CytoCellDB_Supp_File1.xlsx")
 
-    # Create mapping from DepMap_ID to ecDNA status
+    # create mapping from DepMap_ID to ecDNA status
     labels = cyto[['DepMap_ID', 'ECDNA', 'lineage', 'primary_disease']].copy()
     labels = labels.dropna(subset=['DepMap_ID'])
     labels['is_ecdna'] = (labels['ECDNA'] == 'Y').astype(int)
@@ -45,20 +45,20 @@ def load_ecdna_labels(data_dir: Path):
 
 def differential_dependency_analysis(crispr: pd.DataFrame, labels: pd.DataFrame):
     """
-    Find genes where ecDNA+ cells are more dependent (more negative CRISPR score).
+    find genes where ecDNA+ cells are more dependent (more negative CRISPR score).
 
     More negative CRISPR score = gene is more essential for survival.
     """
     logger.info("Running differential dependency analysis...")
 
-    # Find common samples
+    # find common samples
     common = crispr.index.intersection(labels.index)
     logger.info(f"  Common samples: {len(common)}")
 
     crispr_aligned = crispr.loc[common]
     labels_aligned = labels.loc[common]
 
-    # Split by ecDNA status
+    # split by ecDNA status
     ecdna_pos_idx = labels_aligned[labels_aligned['is_ecdna'] == 1].index
     ecdna_neg_idx = labels_aligned[labels_aligned['is_ecdna'] == 0].index
 
@@ -68,7 +68,7 @@ def differential_dependency_analysis(crispr: pd.DataFrame, labels: pd.DataFrame)
     ecdna_pos = crispr_aligned.loc[ecdna_pos_idx]
     ecdna_neg = crispr_aligned.loc[ecdna_neg_idx]
 
-    # Test each gene
+    # test each gene
     results = []
     n_genes = len(crispr_aligned.columns)
 
@@ -88,14 +88,14 @@ def differential_dependency_analysis(crispr: pd.DataFrame, labels: pd.DataFrame)
         except:
             continue
 
-        # Effect size (negative = ecDNA-specific vulnerability)
+        # effect size (negative = ecDNA-specific vulnerability)
         effect_size = pos_scores.mean() - neg_scores.mean()
 
         # Cohen's d
         pooled_std = np.sqrt((pos_scores.std()**2 + neg_scores.std()**2) / 2)
         cohens_d = effect_size / pooled_std if pooled_std > 0 else 0
 
-        # Parse gene name
+        # parse gene name
         gene_name = gene.split(' (')[0] if ' (' in gene else gene
 
         results.append({
@@ -114,10 +114,10 @@ def differential_dependency_analysis(crispr: pd.DataFrame, labels: pd.DataFrame)
 
     results_df = pd.DataFrame(results)
 
-    # Multiple testing correction
+    # multiple testing correction
     results_df['fdr'] = stats.false_discovery_control(results_df['pvalue'], method='bh')
 
-    # Sort by effect size (most negative = most ecDNA-specific)
+    # sort by effect size (most negative = most ecDNA-specific)
     results_df = results_df.sort_values('effect_size')
 
     return results_df
@@ -126,7 +126,7 @@ def differential_dependency_analysis(crispr: pd.DataFrame, labels: pd.DataFrame)
 def categorize_vulnerabilities(results_df: pd.DataFrame):
     """Categorize vulnerabilities by biological function."""
 
-    # Known categories of potential ecDNA vulnerabilities
+    # known categories of potential ecDNA vulnerabilities
     categories = {
         'DNA_replication': ['POLA1', 'POLA2', 'POLB', 'POLD1', 'POLD2', 'POLE', 'POLE2',
                            'MCM2', 'MCM3', 'MCM4', 'MCM5', 'MCM6', 'MCM7', 'MCM8', 'MCM10',
@@ -164,21 +164,18 @@ def main():
     output_dir = data_dir / "vulnerabilities"
     output_dir.mkdir(exist_ok=True)
 
-    # Load data
     crispr = load_crispr_data(data_dir)
     labels = load_ecdna_labels(data_dir)
 
-    # Run analysis
+    # run analysis
     results = differential_dependency_analysis(crispr, labels)
 
-    # Categorize
     results = categorize_vulnerabilities(results)
 
-    # Save full results
+    # save full results
     results.to_csv(output_dir / "differential_dependency_full.csv", index=False)
     logger.info(f"\nSaved full results to {output_dir / 'differential_dependency_full.csv'}")
 
-    # Print summary
     logger.info("\n" + "="*70)
     logger.info("TOP 30 ecDNA-SPECIFIC VULNERABILITIES")
     logger.info("(More negative effect = more essential in ecDNA+ cells)")
@@ -191,11 +188,10 @@ def main():
         print(f"{row['gene']:<12} {row['effect_size']:<10.4f} {row['cohens_d']:<10.3f} "
               f"{row['fdr']:<12.2e} {row['category']:<20}")
 
-    # Significant hits
+    # significant hits
     sig_hits = results[results['fdr'] < 0.05]
     logger.info(f"\n\nSignificant hits (FDR < 0.05): {len(sig_hits)}")
 
-    # By category
     logger.info("\n\nTop hits by category:")
     for cat in results['category'].unique():
         cat_hits = results[(results['category'] == cat) & (results['fdr'] < 0.1)]
@@ -204,12 +200,12 @@ def main():
             for _, row in cat_hits.head(5).iterrows():
                 logger.info(f"  {row['gene']}: effect={row['effect_size']:.4f}, FDR={row['fdr']:.2e}")
 
-    # Save top hits
+    # save top hits
     top_100 = results.head(100)
     top_100.to_csv(output_dir / "top_100_vulnerabilities.csv", index=False)
     logger.info(f"\nSaved top 100 to {output_dir / 'top_100_vulnerabilities.csv'}")
 
-    # Summary statistics
+    # summary statistics
     logger.info("\n\n=== SUMMARY ===")
     logger.info(f"Total genes tested: {len(results)}")
     logger.info(f"Significant (FDR < 0.05): {len(results[results['fdr'] < 0.05])}")

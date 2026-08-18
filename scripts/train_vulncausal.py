@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train VulnCausal model for ecDNA-specific vulnerability discovery.
+train VulnCausal model for ecDNA-specific vulnerability discovery.
 
 Uses:
 - CRISPR dependency scores from DepMap
@@ -41,7 +41,7 @@ class VulnerabilityDataset(Dataset):
             labels: DataFrame with 'is_ecdna' and 'lineage' columns
             sample_genes_per_batch: Number of genes to sample per forward pass
         """
-        # Find common samples
+        # find common samples
         common = list(set(crispr.index) & set(expression.index) & set(labels.index))
         logger.info(f"Common samples: {len(common)}")
 
@@ -50,7 +50,7 @@ class VulnerabilityDataset(Dataset):
         self.expression = expression.loc[common].values.astype(np.float32)
         self.ecdna_labels = labels.loc[common, 'is_ecdna'].values.astype(np.float32)
 
-        # Encode lineages as integers
+        # encode lineages as integers
         lineages = labels.loc[common, 'lineage'].fillna('Unknown')
         unique_lineages = sorted(lineages.unique())
         self.lineage_to_idx = {l: i for i, l in enumerate(unique_lineages)}
@@ -59,7 +59,6 @@ class VulnerabilityDataset(Dataset):
         self.num_genes = self.crispr.shape[1]
         self.sample_genes = sample_genes_per_batch
 
-        # Gene names
         self.gene_names = crispr.columns.tolist()
 
         logger.info(f"Dataset: {len(common)} samples, {self.num_genes} genes")
@@ -70,7 +69,7 @@ class VulnerabilityDataset(Dataset):
         return len(self.sample_ids)
 
     def __getitem__(self, idx):
-        # Sample random genes for this batch
+        # sample random genes for this batch
         gene_indices = np.random.choice(self.num_genes, self.sample_genes, replace=False)
         gene_indices = np.sort(gene_indices)
 
@@ -86,7 +85,7 @@ class VulnerabilityDataset(Dataset):
 
 class SimplifiedVulnCausal(nn.Module):
     """
-    Simplified VulnCausal for initial training.
+    simplified VulnCausal for initial training.
 
     Focuses on learning ecDNA-specific gene dependencies with lineage correction.
     """
@@ -104,7 +103,7 @@ class SimplifiedVulnCausal(nn.Module):
         self.num_genes = num_genes
         self.num_environments = num_environments
 
-        # Expression encoder
+        # expression encoder
         self.expr_encoder = nn.Sequential(
             nn.Linear(expression_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -124,11 +123,10 @@ class SimplifiedVulnCausal(nn.Module):
             nn.Linear(32, 1),
         )
 
-        # Gene embedding
         self.gene_embedding = nn.Embedding(num_genes, 64)
 
         # CRISPR score predictor (ecDNA-aware)
-        # Predicts whether gene is essential given sample's latent + ecDNA status
+        # predicts whether gene is essential given sample's latent + ecDNA status
         self.dependency_predictor = nn.Sequential(
             nn.Linear(latent_dim + 64 + 1, hidden_dim),  # latent + gene_emb + ecdna
             nn.ReLU(),
@@ -146,46 +144,40 @@ class SimplifiedVulnCausal(nn.Module):
 
     def forward(self, expression, gene_ids, ecdna_labels, environments):
         """
-        Forward pass.
+        forward pass.
 
         Args:
             expression: [batch, expr_dim]
             gene_ids: [batch, num_sampled_genes]
             ecdna_labels: [batch]
             environments: [batch]
-
-        Returns:
-            predictions and auxiliary outputs
         """
         batch_size = expression.shape[0]
         num_genes = gene_ids.shape[1]
 
-        # Encode expression
         latent = self.expr_encoder(expression)  # [batch, latent_dim]
 
-        # Predict ecDNA from latent (auxiliary task)
+        # predict ecDNA from latent (auxiliary task)
         ecdna_pred = self.ecdna_predictor(latent).squeeze(-1)  # [batch]
 
-        # Get gene embeddings
         gene_emb = self.gene_embedding(gene_ids)  # [batch, num_genes, 64]
 
-        # Expand latent and ecdna for all genes
+        # expand latent and ecdna for all genes
         latent_expanded = latent.unsqueeze(1).expand(-1, num_genes, -1)
         ecdna_expanded = ecdna_labels.unsqueeze(1).unsqueeze(2).expand(-1, num_genes, 1)
 
-        # Concatenate features
+        # concatenate features
         features = torch.cat([latent_expanded, gene_emb, ecdna_expanded], dim=-1)
         features = features.view(-1, features.shape[-1])
 
-        # Predict dependency
         dep_pred = self.dependency_predictor(features)
         dep_pred = dep_pred.view(batch_size, num_genes)
 
-        # Add environment bias
+        # add environment bias
         env_bias = self.env_bias(environments)  # [batch, 1]
         dep_pred = dep_pred + env_bias
 
-        # Add ecDNA-gene interaction
+        # add ecDNA-gene interaction
         interaction = self.ecdna_gene_interaction[gene_ids]  # [batch, num_genes]
         dep_pred = dep_pred + interaction * ecdna_labels.unsqueeze(1)
 
@@ -197,12 +189,12 @@ class SimplifiedVulnCausal(nn.Module):
 
     def get_vulnerability_scores(self):
         """
-        Get ecDNA-specific vulnerability scores for all genes.
+        get ecDNA-specific vulnerability scores for all genes.
 
         Higher score = more vulnerable in ecDNA+ cells.
         """
-        # The interaction term captures ecDNA-specific dependency
-        # More negative = more essential in ecDNA+ cells
+        # the interaction term captures ecDNA-specific dependency
+        # more negative = more essential in ecDNA+ cells
         scores = -self.ecdna_gene_interaction.detach().cpu().numpy()
         return scores
 
@@ -226,7 +218,7 @@ def train_epoch(model, dataloader, optimizer, device, epoch):
 
         outputs = model(expression, gene_ids, ecdna_labels, environments)
 
-        # Dependency prediction loss (MSE on CRISPR scores)
+        # dependency prediction loss (MSE on CRISPR scores)
         dep_loss = nn.functional.mse_loss(outputs['dependency_pred'], crispr_sampled)
 
         # ecDNA prediction loss (auxiliary task)
@@ -234,7 +226,7 @@ def train_epoch(model, dataloader, optimizer, device, epoch):
             outputs['ecdna_pred'], ecdna_labels
         )
 
-        # Total loss
+        # total loss
         loss = dep_loss + 0.1 * ecdna_loss
 
         loss.backward()
@@ -310,24 +302,23 @@ def main():
 
     data_dir = Path("data")
 
-    # Load data
     logger.info("Loading data...")
     crispr = pd.read_csv(data_dir / "depmap" / "crispr.csv", index_col=0)
     expression = pd.read_csv(data_dir / "depmap" / "expression.csv", index_col=0)
 
-    # Load labels
+    # load labels
     cyto = pd.read_excel(data_dir / "cytocell_db" / "CytoCellDB_Supp_File1.xlsx")
     labels = cyto[['DepMap_ID', 'ECDNA', 'lineage']].dropna(subset=['DepMap_ID'])
     labels['is_ecdna'] = (labels['ECDNA'] == 'Y').astype(int)
     labels = labels.set_index('DepMap_ID')
 
-    # Create dataset
+    # create dataset
     dataset = VulnerabilityDataset(
         crispr, expression, labels,
         sample_genes_per_batch=args.genes_per_batch
     )
 
-    # Split
+    # split
     n_samples = len(dataset)
     indices = np.random.permutation(n_samples)
     train_idx = indices[:int(0.8 * n_samples)]
@@ -341,7 +332,6 @@ def main():
 
     logger.info(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}")
 
-    # Create model
     model = SimplifiedVulnCausal(
         expression_dim=expression.shape[1],
         num_genes=crispr.shape[1],
@@ -351,11 +341,10 @@ def main():
 
     logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-    # Optimizer
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
 
-    # Training loop
+    # training loop
     best_val_loss = float('inf')
     output_dir = Path("checkpoints") / "vulncausal"
     output_dir.mkdir(exist_ok=True, parents=True)
@@ -382,11 +371,11 @@ def main():
             }, output_dir / "best_model.pt")
             logger.info(f"  Saved best model (val_loss={best_val_loss:.4f})")
 
-    # Get final vulnerability scores
+    # get final vulnerability scores
     logger.info("\n=== VULNERABILITY SCORES ===")
     vuln_scores = model.get_vulnerability_scores()
 
-    # Create results dataframe
+    # create results dataframe
     gene_names = [g.split(' (')[0] for g in dataset.gene_names]
     vuln_df = pd.DataFrame({
         'gene': gene_names,
@@ -399,11 +388,11 @@ def main():
     logger.info("\nTop 30 ecDNA-specific vulnerabilities (learned):")
     print(vuln_df.head(30).to_string())
 
-    # Compare with differential analysis
+    # compare with differential analysis
     logger.info("\n=== COMPARISON WITH DIFFERENTIAL ANALYSIS ===")
     diff_df = pd.read_csv(data_dir / "vulnerabilities" / "top_100_vulnerabilities.csv")
 
-    # Check overlap
+    # check overlap
     top_learned = set(vuln_df.head(100)['gene'])
     top_diff = set(diff_df.head(100)['gene'])
     overlap = top_learned & top_diff

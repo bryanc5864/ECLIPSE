@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-Validate CircularODE against Lange et al. 2022 published data.
+validate CircularODE against Lange et al. 2022 published data.
 
 Reference: Lange et al. "The evolutionary dynamics of extrachromosomal DNA
 in human cancers" Nature Genetics 2022. https://doi.org/10.1038/s41588-022-01177-x
-
 Key data points from the paper:
 - GBM39-EC cells treated with erlotinib: ecDNA CN drops over 2 weeks
 - GBM39-HSR cells: chromosomal amplification, no CN change under treatment
@@ -16,21 +15,21 @@ from pathlib import Path
 import torch
 import sys
 
-# Published data from Lange et al. 2022 (extracted from figures)
-# Figure 4 and Extended Data Fig. 7
+# published data from Lange et al. 2022 (extracted from figures)
+# figure 4 and Extended data Fig. 7
 LANGE_PUBLISHED_DATA = {
     'GBM39_EC_erlotinib': {
         'description': 'GBM39-EC (ecDNA) cells treated with erlotinib',
         'initial_cn': 100,  # ~100 copies of EGFRvIII on ecDNA
         'timepoints_days': [0, 7, 14],
-        'cn_values': [100, 40, 15],  # Approximate from Fig 4
+        'cn_values': [100, 40, 15],  # approximate from Fig 4
         'cn_std': [30, 15, 10],
         'treatment': 'targeted',
         'outcome': 'Rapid adaptation - CN drops then resistance emerges',
     },
     'GBM39_HSR_erlotinib': {
         'description': 'GBM39-HSR (chromosomal) cells treated with erlotinib',
-        'initial_cn': 100,  # Same mean CN but on chromosomes
+        'initial_cn': 100,  # same mean CN but on chromosomes
         'timepoints_days': [0, 7, 14],
         'cn_values': [100, 95, 90],  # HSR maintains CN
         'cn_std': [20, 20, 20],
@@ -53,38 +52,27 @@ class SimpleCircularODE:
     """Simplified CircularODE model for validation."""
 
     def __init__(self):
-        # Treatment effects (calibrated from training)
+        # treatment effects (calibrated from training)
         self.treatment_effects = {
             'none': {'decay': 0.0, 'noise': 0.05},
-            'targeted': {'decay': 0.08, 'noise': 0.1},  # Stronger effect for ecDNA
+            'targeted': {'decay': 0.08, 'noise': 0.1},  # stronger effect for ecDNA
             'chemo': {'decay': 0.05, 'noise': 0.08},
             'maintenance': {'decay': 0.02, 'noise': 0.05},
         }
 
     def predict_trajectory(self, initial_cn, treatment, timepoints_days, is_ecdna=True):
-        """
-        Predict CN trajectory under treatment.
-
-        Args:
-            initial_cn: Starting copy number
-            treatment: Treatment type
-            timepoints_days: List of time points in days
-            is_ecdna: True for ecDNA, False for chromosomal (HSR)
-
-        Returns:
-            Predicted CN values at each timepoint
-        """
+        """predict CN trajectory under treatment."""
         effect = self.treatment_effects.get(treatment, self.treatment_effects['none'])
 
         # ecDNA responds to treatment, HSR does not
         if is_ecdna:
             decay_rate = effect['decay']
         else:
-            decay_rate = 0.01  # Minimal change for chromosomal
+            decay_rate = 0.01  # minimal change for chromosomal
 
         predictions = []
         for day in timepoints_days:
-            # Exponential decay model
+            # exponential decay model
             cn = initial_cn * np.exp(-decay_rate * day)
             predictions.append(cn)
 
@@ -109,10 +97,9 @@ def validate_against_lange():
         print(f"Description: {data['description']}")
         print(f"{'='*60}")
 
-        # Determine if ecDNA or chromosomal
+        # determine if ecDNA or chromosomal
         is_ecdna = 'EC' in experiment or 'TR14' in experiment
 
-        # Get predictions
         predictions = model.predict_trajectory(
             initial_cn=data['initial_cn'],
             treatment=data['treatment'],
@@ -123,17 +110,17 @@ def validate_against_lange():
         published = np.array(data['cn_values'])
         published_std = np.array(data['cn_std'])
 
-        # Calculate metrics
+        # calculate metrics
         mse = np.mean((predictions - published) ** 2)
         mae = np.mean(np.abs(predictions - published))
 
-        # Correlation
+        # correlation
         if len(predictions) > 2:
             corr = np.corrcoef(predictions, published)[0, 1]
         else:
             corr = 1.0 if np.allclose(predictions, published, rtol=0.3) else 0.0
 
-        # Check if predictions are within published error bars
+        # check if predictions are within published error bars
         within_error = np.all(np.abs(predictions - published) <= 2 * published_std)
 
         print(f"\nTimepoint (days)  | Published CN | Predicted CN | Diff")
@@ -158,7 +145,6 @@ def validate_against_lange():
             'within_error': within_error,
         })
 
-    # Summary
     print("\n" + "=" * 80)
     print("VALIDATION SUMMARY")
     print("=" * 80)
@@ -181,7 +167,7 @@ def validate_against_lange():
     print(f"  Mean correlation: {df['correlation'].mean():.3f}")
     print(f"  Experiments within error bars: {df['within_error'].sum()}/{len(df)}")
 
-    # Key biological validation
+    # key biological validation
     print("\n" + "=" * 80)
     print("KEY BIOLOGICAL VALIDATION")
     print("=" * 80)
@@ -201,7 +187,6 @@ def validate_against_lange():
    - HSR: Low variance, stable CN, no adaptation
 """)
 
-    # Save results
     output_dir = Path("data/validation")
     output_dir.mkdir(exist_ok=True, parents=True)
     df.to_csv(output_dir / "circularode_lange_validation.csv", index=False)

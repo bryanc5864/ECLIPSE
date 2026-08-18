@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Bootstrap significance tests for ecDNA-Former (Module 1).
+bootstrap significance tests for ecDNA-Former (Module 1).
 
-1. Bootstrap CI on validation AUROC
-2. Bootstrap p-value comparing ecDNA-Former vs Random Forest baseline
-3. Permutation test for AUROC significance
+- bootstrap CI on validation AUROC
+- bootstrap p-value comparing ecDNA-Former vs Random Forest baseline
+- permutation test for AUROC significance
 
 Usage:
     python scripts/compute_significance.py
@@ -30,7 +30,7 @@ def bootstrap_auroc(y_true, y_prob, n_bootstrap=10000, seed=42):
 
     for _ in range(n_bootstrap):
         idx = rng.choice(n, size=n, replace=True)
-        # Ensure both classes present
+        # ensure both classes present
         if len(np.unique(y_true[idx])) < 2:
             continue
         aurocs.append(roc_auc_score(y_true[idx], y_prob[idx]))
@@ -107,7 +107,7 @@ def main():
 
     logger.info("Loading validation data and predictions...")
 
-    # Load validation features and labels
+    # load validation features and labels
     val_data = np.load(features_dir / "module1_features_val.npz", allow_pickle=True)
     y_val = val_data["labels"]
     X_val_seq = val_data["sequence_features"]
@@ -117,7 +117,7 @@ def main():
 
     logger.info(f"Validation set: {len(y_val)} samples, {int(y_val.sum())} ecDNA+")
 
-    # Load trained ecDNA-Former and get predictions
+    # load trained ecDNA-Former and get predictions
     import torch
     from src.models import ECDNAFormer
 
@@ -149,7 +149,6 @@ def main():
         outputs = model(**batch)
         y_prob_former = outputs["formation_probability"].cpu().numpy().flatten()
 
-    # Random Forest baseline
     logger.info("Training Random Forest baseline...")
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import roc_auc_score
@@ -157,7 +156,7 @@ def main():
     train_data = np.load(features_dir / "module1_features_train.npz", allow_pickle=True)
     feature_names = list(train_data["feature_names"])
 
-    # Reconstruct flat feature matrix from NPZ
+    # reconstruct flat feature matrix from NPZ
     X_train = np.hstack([
         train_data["sequence_features"][:, :len(feature_names)],
     ])[:, :len(feature_names)]
@@ -177,33 +176,29 @@ def main():
     logger.info(f"ecDNA-Former AUROC: {auroc_former:.3f}")
     logger.info(f"Random Forest AUROC: {auroc_rf:.3f}")
 
-    # 1. Bootstrap CI for ecDNA-Former
     logger.info("\n--- Bootstrap CI (ecDNA-Former) ---")
     ci_former = bootstrap_auroc(y_val, y_prob_former)
     logger.info(f"AUROC: {ci_former['mean']:.3f} ± {ci_former['std']:.3f}")
     logger.info(f"95% CI: [{ci_former['ci_2.5']:.3f}, {ci_former['ci_97.5']:.3f}]")
 
-    # 2. Bootstrap CI for RF
     logger.info("\n--- Bootstrap CI (Random Forest) ---")
     ci_rf = bootstrap_auroc(y_val, y_prob_rf)
     logger.info(f"AUROC: {ci_rf['mean']:.3f} ± {ci_rf['std']:.3f}")
     logger.info(f"95% CI: [{ci_rf['ci_2.5']:.3f}, {ci_rf['ci_97.5']:.3f}]")
 
-    # 3. Bootstrap comparison (ecDNA-Former vs RF)
+    # bootstrap comparison (ecDNA-Former vs RF)
     logger.info("\n--- Bootstrap Comparison (Former vs RF) ---")
     comparison = bootstrap_auroc_diff(y_val, y_prob_former, y_prob_rf)
     logger.info(f"AUROC diff: {comparison['observed_diff']:.3f}")
     logger.info(f"95% CI of diff: [{comparison['ci_2.5']:.3f}, {comparison['ci_97.5']:.3f}]")
     logger.info(f"P-value (Former > RF): {comparison['p_value']:.4f}")
 
-    # 4. Permutation test
     logger.info("\n--- Permutation Test (Former vs random) ---")
     perm = permutation_test(y_val, y_prob_former)
     logger.info(f"Observed AUROC: {perm['observed_auroc']:.3f}")
     logger.info(f"Null AUROC: {perm['null_mean']:.3f} ± {perm['null_std']:.3f}")
     logger.info(f"P-value: {perm['p_value']:.4f}")
 
-    # Save all results
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 

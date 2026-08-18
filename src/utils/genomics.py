@@ -1,5 +1,5 @@
 """
-Genomic Utilities for ECLIPSE.
+genomic Utilities for ECLIPSE.
 
 Handles:
 - Genomic coordinate parsing and manipulation
@@ -24,7 +24,7 @@ class GenomicCoordinates:
     name: Optional[str] = None
 
     def __post_init__(self):
-        # Normalize chromosome name
+        # normalize chromosome name
         if not self.chromosome.startswith("chr"):
             self.chromosome = f"chr{self.chromosome}"
 
@@ -82,7 +82,7 @@ class GenomicCoordinates:
 class SequenceProcessor:
     """Process DNA sequences for model input."""
 
-    # Nucleotide encoding
+    # nucleotide encoding
     NUCLEOTIDE_TO_IDX = {
         'A': 0, 'a': 0,
         'C': 1, 'c': 1,
@@ -91,58 +91,35 @@ class SequenceProcessor:
         'N': 4, 'n': 4,
     }
 
-    # Complement mapping
+    # complement mapping
     COMPLEMENT = {
         'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'N': 'N',
         'a': 't', 't': 'a', 'c': 'g', 'g': 'c', 'n': 'n',
     }
 
     def __init__(self, max_length: int = 6000):
-        """
-        Initialize sequence processor.
-
-        Args:
-            max_length: Maximum sequence length
-        """
         self.max_length = max_length
 
     def encode(self, sequence: str) -> np.ndarray:
-        """
-        Encode sequence to integer array.
-
-        Args:
-            sequence: DNA sequence string
-
-        Returns:
-            Integer array of nucleotide indices
-        """
+        """encode sequence to integer array."""
         encoded = np.array([
             self.NUCLEOTIDE_TO_IDX.get(nt, 4)
             for nt in sequence
         ])
 
-        # Pad or truncate
+        # pad or truncate
         if len(encoded) > self.max_length:
-            # Take center
+            # take center
             start = (len(encoded) - self.max_length) // 2
             encoded = encoded[start:start + self.max_length]
         elif len(encoded) < self.max_length:
-            # Pad with N (4)
             padding = np.full(self.max_length - len(encoded), 4)
             encoded = np.concatenate([encoded, padding])
 
         return encoded
 
     def one_hot_encode(self, sequence: str) -> np.ndarray:
-        """
-        One-hot encode sequence.
-
-        Args:
-            sequence: DNA sequence string
-
-        Returns:
-            One-hot encoded array [length, 5]
-        """
+        """One-hot encode sequence."""
         encoded = self.encode(sequence)
         one_hot = np.zeros((len(encoded), 5))
         one_hot[np.arange(len(encoded)), encoded] = 1
@@ -159,16 +136,7 @@ class SequenceProcessor:
         return gc / total if total > 0 else 0.0
 
     def kmer_frequencies(self, sequence: str, k: int = 3) -> Dict[str, float]:
-        """
-        Calculate k-mer frequencies.
-
-        Args:
-            sequence: DNA sequence
-            k: k-mer size
-
-        Returns:
-            Dictionary of k-mer frequencies
-        """
+        """calculate k-mer frequencies."""
         sequence = sequence.upper()
         kmers = {}
         total = 0
@@ -183,15 +151,7 @@ class SequenceProcessor:
 
 
 def parse_bed_file(filepath: str) -> List[GenomicCoordinates]:
-    """
-    Parse BED file into list of coordinates.
-
-    Args:
-        filepath: Path to BED file
-
-    Returns:
-        List of GenomicCoordinates
-    """
+    """parse BED file into list of coordinates."""
     coordinates = []
 
     with open(filepath, 'r') as f:
@@ -219,17 +179,9 @@ def liftover_coordinates(
     to_assembly: str = "hg38",
 ) -> List[Optional[GenomicCoordinates]]:
     """
-    Lift over coordinates between genome assemblies.
+    lift over coordinates between genome assemblies.
 
     Note: Requires pyliftover package.
-
-    Args:
-        coordinates: List of coordinates to lift over
-        from_assembly: Source assembly
-        to_assembly: Target assembly
-
-    Returns:
-        List of lifted coordinates (None if failed)
     """
     try:
         from pyliftover import LiftOver
@@ -243,7 +195,7 @@ def liftover_coordinates(
         result = lo.convert_coordinate(coord.chromosome, coord.start)
         if result and len(result) > 0:
             new_chrom, new_pos, strand, _ = result[0]
-            # Approximate end position
+            # approximate end position
             new_end = new_pos + coord.length
             lifted.append(GenomicCoordinates(
                 chromosome=new_chrom,
@@ -258,7 +210,7 @@ def liftover_coordinates(
     return lifted
 
 
-# Chromosome size reference (hg38)
+# chromosome size reference (hg38)
 CHROMOSOME_SIZES_HG38 = {
     "chr1": 248956422, "chr2": 242193529, "chr3": 198295559,
     "chr4": 190214555, "chr5": 181538259, "chr6": 170805979,
@@ -276,17 +228,7 @@ def get_chromosome_bins(
     bin_size: int = 50000,
     assembly: str = "hg38",
 ) -> List[Tuple[int, int]]:
-    """
-    Get genomic bins for a chromosome.
-
-    Args:
-        chromosome: Chromosome name
-        bin_size: Bin size in bp
-        assembly: Genome assembly
-
-    Returns:
-        List of (start, end) tuples
-    """
+    """get genomic bins for a chromosome."""
     if assembly == "hg38":
         chrom_size = CHROMOSOME_SIZES_HG38.get(chromosome, 0)
     else:

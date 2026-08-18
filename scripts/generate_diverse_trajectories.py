@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""
-Generate diverse ecDNA trajectories for CircularODE training.
-Each trajectory uses a unique random seed for structural variation.
+"""generate diverse ecDNA trajectories for CircularODE training.
+
+one random seed per trajectory so the structures differ.
 """
 
 import subprocess
@@ -13,7 +13,6 @@ import yaml
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-# Configuration
 NUM_TRAJECTORIES = 500
 MAX_WORKERS = 4
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -23,7 +22,7 @@ ECSIMULATOR_DIR = PROJECT_DIR / "ecSimulator"
 OUTPUT_DIR = PROJECT_DIR / "data" / "ecdna_trajectories_v2"
 CONFIG_DIR = OUTPUT_DIR / "configs"
 
-# Variation parameters for diverse trajectories
+# variation parameters for diverse trajectories
 ORIGINS = ["episome", "chromothripsis", "two-foldback"]
 TARGET_SIZES = [500000, 1000000, 1500000, 2000000, 3000000, 5000000]  # 0.5-5 Mb
 NUM_INTERVALS = [1, 2, 3, 4]
@@ -32,7 +31,7 @@ NUM_INTERVALS = [1, 2, 3, 4]
 def create_config(traj_id: int) -> Path:
     """Create a unique config file for each trajectory."""
     config = {
-        "random_seed": traj_id + random.randint(1, 1000000),  # Unique seed
+        "random_seed": traj_id + random.randint(1, 1000000),  # unique seed
         "target_size": random.choice(TARGET_SIZES),
         "origin": random.choice(ORIGINS),
         "mean_segment_size": random.randint(50000, 300000),
@@ -64,12 +63,12 @@ def generate_single_trajectory(traj_id: int) -> dict:
     """Generate a single ecDNA trajectory with unique config."""
     output_prefix = OUTPUT_DIR / f"traj_{traj_id:04d}"
 
-    # Skip if already exists
+    # skip if already exists
     cycles_file = Path(f"{output_prefix}_amplicon1_cycles.txt")
     if cycles_file.exists():
         return {"id": traj_id, "status": "skipped", "message": "Already exists"}
 
-    # Create unique config
+    # create unique config
     config_path = create_config(traj_id)
 
     cmd = [
@@ -109,12 +108,12 @@ def main():
     print(f"Target sizes: {TARGET_SIZES}")
     print("-" * 60)
 
-    # Create directories
+    # create directories
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     (OUTPUT_DIR / "intermediate_structures").mkdir(exist_ok=True)
 
-    # Check reference
+    # check reference
     if not REF_FASTA.exists():
         print(f"ERROR: Reference fasta not found: {REF_FASTA}")
         sys.exit(1)

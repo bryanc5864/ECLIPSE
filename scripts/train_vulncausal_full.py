@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """
-Train the full VulnCausal model for ecDNA-specific vulnerability discovery.
+train the full VulnCausal model for ecDNA-specific vulnerability discovery.
 
 Unlike train_vulncausal.py (which uses SimplifiedVulnCausal with a linear
 interaction term), this trains the actual causal inference model from
 src/models/vuln_causal/model.py, which includes:
-  - CausalRepresentationLearner (VAE with 6 disentangled factors, 96-dim latent)
-  - InvariantRiskMinimization (IRM penalty across lineage environments)
-  - NeuralCausalDiscovery (NOTEARS DAG learning over 86 variables)
-  - DoCalculusNetwork (causal effect estimation)
-  - VulnerabilityScoringNetwork (gene ranking)
-
+- CausalRepresentationLearner (VAE with 6 disentangled factors, 96-dim latent)
+- InvariantRiskMinimization (IRM penalty across lineage environments)
+- NeuralCausalDiscovery (NOTEARS DAG learning over 86 variables)
+- DoCalculusNetwork (causal effect estimation)
+- VulnerabilityScoringNetwork (gene ranking)
 Data: DepMap CRISPR (1062 samples x 17453 genes), expression (x 19193 genes),
-      CytoCellDB ecDNA labels.
-
+CytoCellDB ecDNA labels.
 Post-training: runs discover_vulnerabilities() to rank genes and saves
-               data/vulnerabilities/causal_vulnerabilities.csv
+data/vulnerabilities/causal_vulnerabilities.csv
 """
 
 import sys
@@ -42,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 class FullVulnerabilityDataset(Dataset):
     """
-    Dataset for the full VulnCausal model.
+    dataset for the full VulnCausal model.
 
     Provides expression, CRISPR scores, ecDNA labels, and environment IDs.
     Samples a random subset of genes per batch for the IRM predictor.
@@ -55,7 +53,7 @@ class FullVulnerabilityDataset(Dataset):
         labels: pd.DataFrame,
         sample_genes_per_batch: int = 100,
     ):
-        # Find common samples
+        # find common samples
         common = sorted(set(crispr.index) & set(expression.index) & set(labels.index))
         logger.info(f"Common samples: {len(common)}")
 
@@ -64,7 +62,7 @@ class FullVulnerabilityDataset(Dataset):
         self.expression = expression.loc[common].values.astype(np.float32)
         self.ecdna_labels = labels.loc[common, 'is_ecdna'].values.astype(np.float32)
 
-        # Encode lineages as integers
+        # encode lineages as integers
         lineages = labels.loc[common, 'lineage'].fillna('Unknown')
         unique_lineages = sorted(lineages.unique())
         self.lineage_to_idx = {l: i for i, l in enumerate(unique_lineages)}
@@ -75,7 +73,6 @@ class FullVulnerabilityDataset(Dataset):
         self.num_environments = len(unique_lineages)
         self.sample_genes = sample_genes_per_batch
 
-        # Gene names
         self.gene_names = crispr.columns.tolist()
 
         logger.info(f"Dataset: {len(common)} samples, {self.num_genes} CRISPR genes, "
@@ -88,7 +85,7 @@ class FullVulnerabilityDataset(Dataset):
         return len(self.sample_ids)
 
     def __getitem__(self, idx):
-        # Sample random gene indices for this item
+        # sample random gene indices for this item
         gene_indices = np.random.choice(self.num_genes, self.sample_genes, replace=False)
         gene_indices = np.sort(gene_indices)
 
@@ -103,7 +100,7 @@ class FullVulnerabilityDataset(Dataset):
 
 def train_epoch(model, dataloader, optimizer, device, epoch, irm_warmup=10):
     """
-    Train for one epoch using the full VulnCausal model.
+    train for one epoch using the full VulnCausal model.
 
     During IRM warmup (epoch < irm_warmup), only the encoder and graph
     losses are active. After warmup, the full IRM penalty kicks in.
@@ -123,7 +120,7 @@ def train_epoch(model, dataloader, optimizer, device, epoch, irm_warmup=10):
 
         optimizer.zero_grad()
 
-        # Compute full loss via model.get_loss()
+        # compute full loss via model.get_loss()
         losses = model.get_loss(
             expression=expression,
             crispr_scores=crispr,
@@ -132,7 +129,7 @@ def train_epoch(model, dataloader, optimizer, device, epoch, irm_warmup=10):
             gene_ids=gene_ids,
         )
 
-        # During IRM warmup, zero out the IRM penalty to let the
+        # during IRM warmup, zero out the IRM penalty to let the
         # encoder stabilize before imposing invariance
         if epoch < irm_warmup:
             warmup_loss = torch.tensor(0.0, device=device)
@@ -140,7 +137,7 @@ def train_epoch(model, dataloader, optimizer, device, epoch, irm_warmup=10):
                 if k == 'total_loss':
                     continue
                 if k.startswith('irm_'):
-                    # Scale down IRM losses during warmup
+                    # scale down IRM losses during warmup
                     scale = epoch / irm_warmup
                     warmup_loss = warmup_loss + v * scale
                 else:
@@ -176,7 +173,7 @@ def validate(model, dataloader, device):
     all_ecdna_true = []
     n_batches = 0
 
-    # NOTE: We use torch.enable_grad() (not no_grad) because the IRM penalty
+    # we use torch.enable_grad() (not no_grad) because the IRM penalty
     # in get_loss() calls torch.autograd.grad on the dummy_w parameter,
     # which requires gradients to be enabled even during validation.
     for batch in dataloader:
@@ -186,7 +183,7 @@ def validate(model, dataloader, device):
         ecdna_labels = batch['ecdna_label'].to(device)
         environments = batch['environment'].to(device)
 
-        # Forward pass without grad for predictions
+        # forward pass without grad for predictions
         with torch.no_grad():
             outputs = model(
                 expression=expression,
@@ -224,13 +221,13 @@ def validate(model, dataloader, device):
     ecdna_pred_arr = np.array(all_ecdna_pred)
     ecdna_true_arr = np.array(all_ecdna_true)
 
-    # Use the learned factor: higher = ecDNA positive
+    # use the learned factor: higher = ecDNA positive
     if np.std(ecdna_pred_arr) > 1e-8 and np.std(ecdna_true_arr) > 1e-8:
         dep_corr = np.corrcoef(ecdna_pred_arr, ecdna_true_arr)[0, 1]
     else:
         dep_corr = 0.0
 
-    # Check DAG constraint if available
+    # check DAG constraint if available
     dag_violation = 0.0
     if hasattr(model, 'causal_graph') and model.use_causal_graph:
         adj = model.causal_graph.get_adjacency_matrix()
@@ -249,15 +246,13 @@ def validate(model, dataloader, device):
 def discover_and_save_vulnerabilities(
     model, dataset, device, output_path, top_k=100
 ):
-    """
-    Run vulnerability discovery on the full dataset and save results.
-    """
+    """run vulnerability discovery on the full dataset and save results."""
     logger.info("Running vulnerability discovery...")
 
-    # Load all data onto device (or in batches for large datasets)
+    # load all data onto device (or in batches for large datasets)
     n = len(dataset.sample_ids)
 
-    # Use all samples
+    # use all samples
     expression = torch.tensor(dataset.expression, device=device)
     crispr = torch.tensor(dataset.crispr, device=device)
     ecdna_labels = torch.tensor(dataset.ecdna_labels, device=device)
@@ -273,7 +268,7 @@ def discover_and_save_vulnerabilities(
             top_k=top_k,
         )
 
-    # Build results dataframe
+    # build results dataframe
     gene_names_short = [g.split(' (')[0] for g in dataset.gene_names]
 
     rows = []
@@ -296,7 +291,7 @@ def discover_and_save_vulnerabilities(
     vuln_df.to_csv(output_path, index=False)
     logger.info(f"Saved {len(vuln_df)} vulnerability scores to {output_path}")
 
-    # Print top results
+    # print top results
     logger.info(f"\nTop {min(30, len(vuln_df))} causal vulnerabilities:")
     print(vuln_df.head(30).to_string(index=False))
 
@@ -325,7 +320,6 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
 
-    # ── Load Data ────────────────────────────────────────────────────────
     data_dir = Path("data")
 
     logger.info("Loading CRISPR data...")
@@ -342,13 +336,13 @@ def main():
     labels['is_ecdna'] = (labels['ECDNA'] == 'Y').astype(int)
     labels = labels.set_index('DepMap_ID')
 
-    # ── Create Dataset ───────────────────────────────────────────────────
+    # create Dataset
     dataset = FullVulnerabilityDataset(
         crispr, expression, labels,
         sample_genes_per_batch=args.genes_per_batch,
     )
 
-    # Train/val split (80/20)
+    # train/val split (80/20)
     n_samples = len(dataset)
     indices = np.random.RandomState(42).permutation(n_samples)
     n_train = int(0.8 * n_samples)
@@ -363,7 +357,6 @@ def main():
 
     logger.info(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}")
 
-    # ── Create Model ─────────────────────────────────────────────────────
     model_config = {
         'num_genes': dataset.num_genes,
         'expression_dim': dataset.expression_dim,
@@ -381,11 +374,11 @@ def main():
     n_params = sum(p.numel() for p in model.parameters())
     logger.info(f"Full VulnCausal model: {n_params:,} parameters")
 
-    # ── Optimizer & Scheduler ────────────────────────────────────────────
+    # optimizer & Scheduler
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
 
-    # ── Training Loop ────────────────────────────────────────────────────
+    # training Loop
     output_dir = Path("checkpoints/vulncausal_full")
     output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -425,7 +418,7 @@ def main():
             f"DAG_h={val_metrics['dag_violation']:.4f}"
         )
 
-        # Save best model
+        # save best model
         if val_metrics['total_loss'] < best_val_loss:
             best_val_loss = val_metrics['total_loss']
             patience_counter = 0
@@ -445,10 +438,9 @@ def main():
                 logger.info(f"Early stopping at epoch {epoch} (patience={args.patience})")
                 break
 
-    # ── Save Training History ────────────────────────────────────────────
+    # save training History
     pd.DataFrame(history).to_csv(output_dir / "training_history.csv", index=False)
 
-    # ── Final Evaluation ─────────────────────────────────────────────────
     logger.info(f"\n{'='*60}")
     logger.info("FINAL EVALUATION (best checkpoint)")
     logger.info(f"{'='*60}")
@@ -462,7 +454,7 @@ def main():
     logger.info(f"  DAG violation:     {final_metrics['dag_violation']:.6f}")
     logger.info(f"  Best epoch:        {checkpoint['epoch']}")
 
-    # ── Vulnerability Discovery ──────────────────────────────────────────
+    # vulnerability Discovery
     logger.info(f"\n{'='*60}")
     logger.info("POST-TRAINING: Vulnerability Discovery")
     logger.info(f"{'='*60}")
@@ -476,10 +468,10 @@ def main():
         top_k=args.top_k,
     )
 
-    # Compare with existing analyses
+    # compare with existing analyses
     logger.info("\n=== COMPARISON WITH EXISTING ANALYSES ===")
 
-    # Differential analysis
+    # differential analysis
     diff_path = vuln_dir / "differential_dependency_full.csv"
     if diff_path.exists():
         diff_df = pd.read_csv(diff_path)
@@ -490,7 +482,7 @@ def main():
         if overlap_diff:
             logger.info(f"  Overlapping: {sorted(overlap_diff)[:20]}")
 
-    # Simplified model
+    # simplified model
     learned_path = vuln_dir / "learned_vulnerabilities.csv"
     if learned_path.exists():
         learned_df = pd.read_csv(learned_path)
@@ -500,7 +492,6 @@ def main():
         if overlap_learned:
             logger.info(f"  Overlapping: {sorted(overlap_learned)[:20]}")
 
-    # Literature validation
     lit_path = vuln_dir / "literature_validation.csv"
     if lit_path.exists():
         lit_df = pd.read_csv(lit_path)
@@ -512,7 +503,7 @@ def main():
         if lit_overlap:
             logger.info(f"  Validated: {sorted(lit_overlap)}")
 
-    # Save final results
+    # save final results
     results = {
         'model': 'VulnCausal (full)',
         'best_epoch': int(checkpoint['epoch']),

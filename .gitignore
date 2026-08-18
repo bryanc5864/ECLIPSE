@@ -60,3 +60,38 @@ logs/
 checkpoints/
 outputs/
 wandb/
+
+# raw / re-downloadable data
+data/raw/
+data/external/
+data/depmap/
+data/hic/
+data/gdsc/
+data/ecdna_labels/
+data/ecdna_trajectories/
+*.tar.gz
+*.tgz
+*.zip
+*.bam
+*.sam
+*.fastq
+*.fastq.gz
+*.sra
+*.h5ad
+*.mtx
+
+# model weights and run artifacts
+*.ckpt
+*.safetensors
+test_checkpoints/
+runs/
+mlruns/
+lightning_logs/
+tmp/
+scratch/
+
+# node
+node_modules/
+
+# nested upstream simulator (not part of this repo)
+ecSimulator/

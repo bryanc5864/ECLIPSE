@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Gene Set Enrichment Analysis (GSEA) for vulnerability candidates (Module 3).
+gene Set Enrichment Analysis (GSEA) for vulnerability candidates (Module 3).
 
 Implements standard GSEA (Subramanian et al. 2005) using ranked gene lists
 from differential dependency analysis. Compares pathway-level enrichment
 with the existing hypergeometric test results.
-
 Pathway-level FDR can be significant even when no individual gene survives
 gene-level FDR, because GSEA detects coordinated shifts across gene sets.
 
@@ -31,17 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def compute_enrichment_score(ranked_genes, gene_set, weights=None):
-    """
-    Compute GSEA enrichment score (running-sum KS statistic).
-
-    Args:
-        ranked_genes: List of gene names, ranked by metric (most extreme first).
-        gene_set: Set of genes in the pathway.
-        weights: Optional array of absolute metric values for weighted scoring.
-
-    Returns:
-        (es, running_scores): Enrichment score and running sum array.
-    """
+    """compute GSEA enrichment score (running-sum KS statistic)."""
     n = len(ranked_genes)
     hits = np.array([1 if g in gene_set else 0 for g in ranked_genes])
 
@@ -51,7 +40,7 @@ def compute_enrichment_score(ranked_genes, gene_set, weights=None):
     if n_hit == 0 or n_miss == 0:
         return 0.0, np.zeros(n)
 
-    # Weighted scoring (Subramanian et al. 2005)
+    # weighted scoring (Subramanian et al. 2005)
     if weights is not None:
         hit_weights = hits * np.abs(weights)
         hit_norm = hit_weights.sum()
@@ -61,7 +50,7 @@ def compute_enrichment_score(ranked_genes, gene_set, weights=None):
 
     miss_norm = n_miss
 
-    # Running sum
+    # running sum
     running = np.zeros(n)
     for i in range(n):
         if hits[i]:
@@ -80,7 +69,7 @@ def compute_enrichment_score(ranked_genes, gene_set, weights=None):
 def gsea_permutation_test(ranked_genes, gene_set, weights, observed_es,
                           n_permutations=10000, seed=42):
     """
-    Permutation test for GSEA enrichment score.
+    permutation test for GSEA enrichment score.
 
     Permutes gene labels (not the ranking) to generate a null distribution.
     """
@@ -101,7 +90,7 @@ def gsea_permutation_test(ranked_genes, gene_set, weights, observed_es,
     else:
         p_value = (null_es <= observed_es).mean()
 
-    # Use minimum p-value floor to avoid p=0
+    # use minimum p-value floor to avoid p=0
     p_value = max(p_value, 1.0 / (n_permutations + 1))
 
     return p_value, null_es
@@ -116,7 +105,7 @@ def bh_correction(p_values):
     for i, idx in enumerate(sorted_idx):
         adjusted[idx] = min(1.0, p_values[idx] * n / (i + 1))
 
-    # Ensure monotonicity
+    # ensure monotonicity
     for i in range(n - 2, -1, -1):
         adjusted[sorted_idx[i]] = min(adjusted[sorted_idx[i]], adjusted[sorted_idx[i + 1]])
 
@@ -132,7 +121,7 @@ def main():
 
     data_dir = Path(args.data_dir)
 
-    # Load differential dependency data
+    # load differential dependency data
     dep_file = data_dir / "vulnerabilities" / "differential_dependency_full.csv"
     if not dep_file.exists():
         logger.error(f"Differential dependency file not found: {dep_file}")
@@ -141,22 +130,22 @@ def main():
     dep_df = pd.read_csv(dep_file)
     logger.info(f"Loaded {len(dep_df)} genes from differential dependency analysis")
 
-    # Determine gene and effect size columns
+    # determine gene and effect size columns
     gene_col = dep_df.columns[0]
-    # Look for effect size column
+    # look for effect size column
     effect_cols = [c for c in dep_df.columns if 'effect' in c.lower() or 'cohen' in c.lower()
                    or 'diff' in c.lower() or 'stat' in c.lower()]
     if effect_cols:
         effect_col = effect_cols[0]
     else:
-        # Fallback: use second column
+        # fallback: use second column
         effect_col = dep_df.columns[1]
     logger.info(f"Using gene column: '{gene_col}', effect column: '{effect_col}'")
 
-    # Clean gene names (remove parenthetical ENTREZ IDs if present)
+    # clean gene names (remove parenthetical ENTREZ IDs if present)
     dep_df['gene_clean'] = dep_df[gene_col].astype(str).str.split(r' \(', regex=True).str[0]
 
-    # Rank genes by effect size (most negative = most dependent in ecDNA+)
+    # rank genes by effect size (most negative = most dependent in ecDNA+)
     dep_df = dep_df.sort_values(effect_col, ascending=True)
     ranked_genes = dep_df['gene_clean'].tolist()
     effect_sizes = dep_df[effect_col].values.astype(float)
@@ -165,29 +154,28 @@ def main():
     logger.info(f"Ranked {len(ranked_genes)} genes by {effect_col}")
     logger.info(f"Effect size range: [{effect_sizes.min():.4f}, {effect_sizes.max():.4f}]")
 
-    # Run GSEA for each pathway
+    # run GSEA for each pathway
     logger.info(f"\n{'='*60}")
     logger.info(f"GSEA ({args.n_permutations} permutations)")
     logger.info(f"{'='*60}")
 
     results = []
     for pathway_name, pathway_genes in PATHWAY_ANNOTATIONS.items():
-        # Intersect pathway genes with our tested genes
+        # intersect pathway genes with our tested genes
         overlap_genes = pathway_genes & all_genes
         if len(overlap_genes) < 2:
             logger.info(f"  {pathway_name}: <2 genes overlap, skipping")
             continue
 
-        # Compute observed enrichment score
+        # compute observed enrichment score
         es, running = compute_enrichment_score(ranked_genes, overlap_genes, effect_sizes)
 
-        # Permutation test
         p_value, null_es = gsea_permutation_test(
             ranked_genes, overlap_genes, effect_sizes, es,
             n_permutations=args.n_permutations, seed=args.seed,
         )
 
-        # Normalized enrichment score (NES)
+        # normalized enrichment score (NES)
         if es >= 0:
             pos_null = null_es[null_es >= 0]
             nes = es / max(pos_null.mean(), 1e-8) if len(pos_null) > 0 else 0.0
@@ -195,7 +183,7 @@ def main():
             neg_null = null_es[null_es < 0]
             nes = -es / max(abs(neg_null.mean()), 1e-8) if len(neg_null) > 0 else 0.0
 
-        # Find leading edge genes (those before the max running-sum point)
+        # find leading edge genes (those before the max running-sum point)
         peak_idx = np.argmax(np.abs(running))
         leading_edge = [g for g in ranked_genes[:peak_idx + 1] if g in overlap_genes]
 
@@ -217,15 +205,13 @@ def main():
     gsea_df = pd.DataFrame(results)
     gsea_df["fdr"] = bh_correction(gsea_df["p_value"].values)
 
-    # Sort by FDR
     gsea_df = gsea_df.sort_values("fdr")
 
-    # Save GSEA results
+    # save GSEA results
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
     gsea_df.to_csv(output_dir / "gsea_results.csv", index=False)
 
-    # ---------- Compare with hypergeometric results ----------
     logger.info(f"\n{'='*60}")
     logger.info("GSEA vs Hypergeometric Comparison")
     logger.info(f"{'='*60}")
@@ -233,7 +219,7 @@ def main():
     hyper_file = output_dir / "pathway_enrichment_results.csv"
     if hyper_file.exists():
         hyper_df = pd.read_csv(hyper_file)
-        # Use top_47 results
+        # use top_47 results
         hyper_47 = hyper_df[hyper_df["candidate_set"] == "top_47"].copy()
 
         comparison_rows = []
@@ -266,7 +252,6 @@ def main():
     else:
         logger.info("Hypergeometric results not found; skipping comparison")
 
-    # ---------- Summary ----------
     logger.info(f"\n{'='*60}")
     logger.info("GSEA SUMMARY")
     logger.info(f"{'='*60}")

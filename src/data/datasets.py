@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class ECDNADataset(Dataset):
     """
-    Dataset for ecDNA formation prediction (Module 1: ecDNA-Former).
+    dataset for ecDNA formation prediction (Module 1: ecDNA-Former).
 
     Provides:
     - Sequence context features
@@ -33,9 +33,8 @@ class ECDNADataset(Dataset):
     - Fragile site proximity features
     - Copy number context
     - ecDNA formation labels
-
     Can be initialized directly with features or from a data directory:
-        ds = ECDNADataset.from_data_dir("data", split="train")
+    ds = ECDNADataset.from_data_dir("data", split="train")
     """
 
     def __init__(
@@ -46,17 +45,7 @@ class ECDNADataset(Dataset):
         oncogene_labels: Optional[np.ndarray] = None,
         transform: Optional[Callable] = None,
     ):
-        """
-        Initialize dataset.
-
-        Args:
-            sample_ids: List of sample identifiers
-            features: Dictionary of feature arrays
-            labels: Binary ecDNA formation labels (0/1)
-            oncogene_labels: Multi-label oncogene predictions (optional)
-            transform: Optional data transformation
-        """
-        # Skip if created via from_data_dir (already initialized)
+        # skip if created via from_data_dir (already initialized)
         if sample_ids is None:
             return
 
@@ -68,7 +57,7 @@ class ECDNADataset(Dataset):
         )
         self.transform = transform
 
-        # Validate
+        # validate
         n_samples = len(sample_ids)
         assert len(labels) == n_samples
         for key, arr in features.items():
@@ -113,15 +102,7 @@ class ECDNADataset(Dataset):
         labels: np.ndarray,
         **kwargs
     ) -> "ECDNADataset":
-        """
-        Create dataset from data loaders.
-
-        Args:
-            sample_ids: List of sample IDs
-            feature_extractor: FeatureExtractor instance
-            genomic_regions: DataFrame with genomic coordinates
-            labels: ecDNA formation labels
-        """
+        """create dataset from data loaders."""
         features = feature_extractor.extract_module1_features(
             sample_ids, genomic_regions
         )
@@ -136,33 +117,25 @@ class ECDNADataset(Dataset):
         seed: int = 42,
         **kwargs
     ) -> "ECDNADataset":
-        """
-        Create dataset from data directory.
-
-        Args:
-            data_dir: Path to data directory
-            split: One of "train", "val"
-            val_ratio: Validation set ratio
-            seed: Random seed for splitting
-        """
+        """create dataset from data directory."""
         data_dir = Path(data_dir)
 
-        # Load Kim 2020 labels
+        # load Kim 2020 labels
         labels_file = data_dir / "ecdna_labels" / "kim2020_supplementary_tables.xlsx"
         if not labels_file.exists():
             raise FileNotFoundError(f"Labels file not found: {labels_file}")
 
         df = pd.read_excel(labels_file, sheet_name=0)
 
-        # Extract ecDNA labels (Circular = ecDNA+)
+        # extract ecDNA labels (Circular = ecDNA+)
         df["ecdna_positive"] = (df["amplicon_classification"] == "Circular").astype(int)
 
-        # Group by sample to get sample-level labels
+        # group by sample to get sample-level labels
         sample_labels = df.groupby("sample_barcode")["ecdna_positive"].max()
         sample_ids = sample_labels.index.tolist()
         labels = sample_labels.values
 
-        # Split data
+        # split data
         np.random.seed(seed)
         n_samples = len(sample_ids)
         indices = np.random.permutation(n_samples)
@@ -183,7 +156,7 @@ class ECDNADataset(Dataset):
         logger.info(f"ECDNADataset ({split}): {len(split_sample_ids)} samples, "
                     f"{sum(split_labels)} ecDNA+, {len(split_labels) - sum(split_labels)} ecDNA-")
 
-        # Try to load pre-computed features if available
+        # try to load pre-computed features if available
         features_file = data_dir / "features" / f"module1_features_{split}.npz"
         if features_file.exists():
             logger.info(f"Loading pre-computed REAL features from {features_file}")
@@ -200,7 +173,7 @@ class ECDNADataset(Dataset):
         else:
             logger.warning(f"Pre-computed features not found at {features_file}")
             logger.warning("Using RANDOM placeholder features - run scripts/extract_features.py first!")
-            # Generate placeholder features (dimensions must match model expectations)
+            # generate placeholder features (dimensions must match model expectations)
             n = len(split_sample_ids)
             features = {
                 "sequence_features": np.random.randn(n, 256).astype(np.float32),
@@ -209,7 +182,7 @@ class ECDNADataset(Dataset):
                 "copy_number_features": np.random.randn(n, 32).astype(np.float32),
             }
 
-        # Create instance directly without going through __new__
+        # create instance directly without going through __new
         instance = object.__new__(cls)
         instance.sample_ids = split_sample_ids
         instance.features = features
@@ -235,17 +208,6 @@ class ECDNAGraphDataset(Dataset):
         global_features: np.ndarray,
         labels: np.ndarray,
     ):
-        """
-        Initialize graph dataset.
-
-        Args:
-            sample_ids: List of sample identifiers
-            node_features: List of node feature matrices (per sample)
-            edge_indices: List of edge index arrays (per sample)
-            edge_attrs: List of edge attribute arrays (per sample)
-            global_features: Global (non-graph) features
-            labels: ecDNA formation labels
-        """
         self.sample_ids = sample_ids
         self.node_features = node_features
         self.edge_indices = edge_indices
@@ -258,7 +220,7 @@ class ECDNAGraphDataset(Dataset):
 
     def __getitem__(self, idx: int) -> GraphData:
         """Get a single graph sample."""
-        # Create PyG Data object
+        # create PyG data object
         data = GraphData(
             x=torch.FloatTensor(self.node_features[idx]),
             edge_index=torch.LongTensor(self.edge_indices[idx]),
@@ -273,12 +235,11 @@ class ECDNAGraphDataset(Dataset):
 
 class DynamicsDataset(Dataset):
     """
-    Dataset for ecDNA evolutionary dynamics (Module 2: CircularODE).
+    dataset for ecDNA evolutionary dynamics (Module 2: CircularODE).
 
     Provides time-series data of ecDNA copy numbers under various treatments.
-
     Can be initialized directly or from a data directory:
-        ds = DynamicsDataset.from_data_dir("data/ecdna_trajectories", split="train")
+    ds = DynamicsDataset.from_data_dir("data/ecdna_trajectories", split="train")
     """
 
     def __init__(
@@ -287,18 +248,6 @@ class DynamicsDataset(Dataset):
         max_time_points: int = 100,
         normalize: bool = True,
     ):
-        """
-        Initialize dynamics dataset.
-
-        Args:
-            trajectories: List of trajectory dictionaries with keys:
-                - initial_state: Initial ecDNA state
-                - time_points: Observation times
-                - copy_numbers: Observed copy numbers
-                - treatment: Treatment information
-            max_time_points: Maximum number of time points per trajectory
-            normalize: Whether to normalize copy numbers
-        """
         if trajectories is None:
             return
 
@@ -316,23 +265,22 @@ class DynamicsDataset(Dataset):
         """Get a single trajectory."""
         traj = self.trajectories[idx]
 
-        # Pad or truncate to fixed length
+        # pad or truncate to fixed length
         time_points = np.array(traj["time_points"])
         copy_numbers = np.array(traj["copy_numbers"])
 
         n_points = len(time_points)
         if n_points > self.max_time_points:
-            # Subsample
+            # subsample
             indices = np.linspace(0, n_points - 1, self.max_time_points, dtype=int)
             time_points = time_points[indices]
             copy_numbers = copy_numbers[indices]
         elif n_points < self.max_time_points:
-            # Pad
             pad_length = self.max_time_points - n_points
             time_points = np.pad(time_points, (0, pad_length), constant_values=-1)
             copy_numbers = np.pad(copy_numbers, (0, pad_length), constant_values=0)
 
-        # Create mask for valid time points
+        # create mask for valid time points
         mask = time_points >= 0
 
         if self.normalize:
@@ -360,7 +308,7 @@ class DynamicsDataset(Dataset):
         if treatment is None:
             return torch.zeros(16)
 
-        # Simple encoding (in production, use learned embeddings)
+        # simple encoding (in production, use learned embeddings)
         encoding = torch.zeros(16)
 
         treatment_types = {
@@ -392,28 +340,23 @@ class DynamicsDataset(Dataset):
         **kwargs
     ) -> "DynamicsDataset":
         """
-        Create dataset from simulated trajectories.
+        create dataset from simulated trajectories.
 
         Uses ecSimulator-style dynamics for training when real longitudinal
         data is limited.
-
-        Args:
-            n_trajectories: Number of trajectories to simulate
-            time_horizon: Total simulation time
-            dt: Time step
         """
         trajectories = []
         np.random.seed(42)
 
         for i in range(n_trajectories):
-            # Initial copy number (5-50)
+            # initial copy number (5-50)
             initial_cn = np.random.uniform(5, 50)
 
-            # Simulate trajectory
+            # simulate trajectory
             time_points = np.arange(0, time_horizon, dt)
             copy_numbers = cls._simulate_trajectory(initial_cn, time_points)
 
-            # Random treatment (for some trajectories)
+            # random treatment (for some trajectories)
             treatment = None
             if np.random.random() < 0.5:
                 treatment = {
@@ -422,11 +365,11 @@ class DynamicsDataset(Dataset):
                     "duration": np.random.uniform(10, 50),
                     "start_time": np.random.uniform(20, 50),
                 }
-                # Apply treatment effect
+                # apply treatment effect
                 if treatment["type"] != "none":
                     start_idx = int(treatment["start_time"] / dt)
                     end_idx = start_idx + int(treatment["duration"] / dt)
-                    copy_numbers[start_idx:end_idx] *= 0.5  # Treatment reduces CN
+                    copy_numbers[start_idx:end_idx] *= 0.5  # treatment reduces CN
 
             trajectories.append({
                 "initial_state": np.array([initial_cn, 0.0, 1.0]),  # CN, time, active
@@ -445,7 +388,7 @@ class DynamicsDataset(Dataset):
         noise_scale: float = 0.1
     ) -> np.ndarray:
         """
-        Simulate ecDNA copy number trajectory.
+        simulate ecDNA copy number trajectory.
 
         Uses a stochastic model with:
         - Exponential growth (oncogene-driven fitness advantage)
@@ -458,13 +401,13 @@ class DynamicsDataset(Dataset):
         for i in range(1, n_points):
             dt = time_points[i] - time_points[i - 1]
 
-            # Growth (deterministic)
+            # growth (deterministic)
             growth = growth_rate * copy_numbers[i - 1] * dt
 
-            # Segregation noise (scales with sqrt(CN))
+            # segregation noise (scales with sqrt(CN))
             noise = noise_scale * np.sqrt(copy_numbers[i - 1]) * np.random.randn()
 
-            # Update
+            # update
             copy_numbers[i] = max(0, copy_numbers[i - 1] + growth + noise)
 
         return copy_numbers
@@ -478,20 +421,12 @@ class DynamicsDataset(Dataset):
         seed: int = 42,
         **kwargs
     ) -> "DynamicsDataset":
-        """
-        Create dataset from trajectory data directory.
-
-        Args:
-            data_dir: Path to trajectories directory
-            split: One of "train", "val"
-            val_ratio: Validation ratio
-            seed: Random seed
-        """
+        """create dataset from trajectory data directory."""
         import glob
 
         data_dir = Path(data_dir)
 
-        # Find all trajectory files
+        # find all trajectory files
         cycle_files = sorted(glob.glob(str(data_dir / "traj_*_amplicon1_cycles.txt")))
         if not cycle_files:
             logger.warning(f"No trajectory files found in {data_dir}, using simulated data")
@@ -499,7 +434,7 @@ class DynamicsDataset(Dataset):
 
         logger.info(f"Found {len(cycle_files)} trajectory files")
 
-        # Parse trajectories
+        # parse trajectories
         trajectories = []
         for cycle_file in cycle_files:
             try:
@@ -513,7 +448,7 @@ class DynamicsDataset(Dataset):
             logger.warning("No valid trajectories parsed, using simulated data")
             return cls.from_simulator(n_trajectories=500, **kwargs)
 
-        # Split data
+        # split data
         np.random.seed(seed)
         n = len(trajectories)
         indices = np.random.permutation(n)
@@ -542,26 +477,26 @@ class DynamicsDataset(Dataset):
     @staticmethod
     def _parse_trajectory_file(cycle_file: str, data_dir: Path) -> Optional[Dict]:
         """Parse a trajectory from ecSimulator output files."""
-        # Get trajectory ID
+        # get trajectory ID
         traj_id = Path(cycle_file).stem.replace("_amplicon1_cycles", "")
 
-        # Look for intermediate structures
+        # look for intermediate structures
         intermediate_dir = data_dir / "intermediate_structures"
         intermediate_files = sorted(glob.glob(
             str(intermediate_dir / f"{traj_id}_intermediate*_amplicon1_cycles.txt")
         ))
 
-        # Parse copy numbers from cycle files
+        # parse copy numbers from cycle files
         copy_numbers = []
         time_points = []
 
-        # Parse intermediates as time series
+        # parse intermediates as time series
         for i, int_file in enumerate(intermediate_files):
             try:
                 with open(int_file) as f:
                     for line in f:
                         if line.startswith("Cycle="):
-                            # Extract copy count
+                            # extract copy count
                             parts = line.strip().split(";")
                             for part in parts:
                                 if "Copy_count=" in part:
@@ -573,7 +508,7 @@ class DynamicsDataset(Dataset):
             except:
                 continue
 
-        # Parse final structure
+        # parse final structure
         try:
             with open(cycle_file) as f:
                 for line in f:
@@ -590,7 +525,7 @@ class DynamicsDataset(Dataset):
             pass
 
         if len(copy_numbers) < 2:
-            # Not enough data points, simulate trajectory instead
+            # not enough data points, simulate trajectory instead
             initial_cn = copy_numbers[0] if copy_numbers else np.random.uniform(5, 50)
             time_points = list(range(10))
             copy_numbers = [initial_cn]
@@ -609,12 +544,11 @@ class DynamicsDataset(Dataset):
 
 class VulnerabilityDataset(Dataset):
     """
-    Dataset for therapeutic vulnerability discovery (Module 3: VulnCausal).
+    dataset for therapeutic vulnerability discovery (Module 3: VulnCausal).
 
     Combines CRISPR screening data with ecDNA status for causal inference.
-
     Can be initialized directly or from a data directory:
-        ds = VulnerabilityDataset.from_data_dir("data", split="train")
+    ds = VulnerabilityDataset.from_data_dir("data", split="train")
     """
 
     def __init__(
@@ -625,20 +559,10 @@ class VulnerabilityDataset(Dataset):
         covariates: Optional[pd.DataFrame] = None,
         gene_subset: Optional[List[str]] = None,
     ):
-        """
-        Initialize vulnerability dataset.
-
-        Args:
-            crispr_scores: CRISPR dependency scores (cell_lines x genes)
-            expression: Gene expression (cell_lines x genes)
-            ecdna_labels: Binary ecDNA status per cell line
-            covariates: Optional covariates (lineage, etc.)
-            gene_subset: Subset of genes to include
-        """
         if crispr_scores is None:
             return
 
-        # Align indices
+        # align indices
         common_ids = (
             set(crispr_scores.index)
             & set(expression.index)
@@ -682,7 +606,7 @@ class VulnerabilityDataset(Dataset):
         }
 
         if self.covariates is not None:
-            # Encode categorical covariates
+            # encode categorical covariates
             cov_values = self._encode_covariates(self.covariates.iloc[idx])
             item["covariates"] = torch.FloatTensor(cov_values)
 
@@ -690,12 +614,12 @@ class VulnerabilityDataset(Dataset):
 
     def _encode_covariates(self, cov_row: pd.Series) -> np.ndarray:
         """Encode covariates (one-hot for categorical)."""
-        # Simple encoding - in production, use proper one-hot
+        # simple encoding - in production, use proper one-hot
         encoded = []
         for col in cov_row.index:
             val = cov_row[col]
             if isinstance(val, str):
-                # Hash to fixed dimension
+                # hash to fixed dimension
                 encoded.append(hash(val) % 100 / 100.0)
             else:
                 encoded.append(float(val) if pd.notna(val) else 0.0)
@@ -722,25 +646,19 @@ class VulnerabilityDataset(Dataset):
         cytocell_loader,
         **kwargs
     ) -> "VulnerabilityDataset":
-        """
-        Create dataset from data loaders.
-
-        Args:
-            depmap_loader: DepMapLoader instance
-            cytocell_loader: CytoCellDBLoader instance
-        """
-        # Get CRISPR and expression
+        """create dataset from data loaders."""
+        # get CRISPR and expression
         crispr = depmap_loader.crispr
         expression = depmap_loader.expression
 
-        # Get ecDNA labels
+        # get ecDNA labels
         cytocell_data = cytocell_loader.load()
         ecdna_labels = pd.Series(
             (cytocell_data["ecdna_status"] == "positive").astype(int).values,
             index=cytocell_data["depmap_id"]
         )
 
-        # Get covariates
+        # get covariates
         cell_lines = depmap_loader.cell_lines
         covariates = cell_lines.set_index("DepMap_ID")[["lineage"]]
 
@@ -755,16 +673,10 @@ class VulnerabilityDataset(Dataset):
         seed: int = 42,
         **kwargs
     ) -> "VulnerabilityDataset":
-        """
-        Create dataset from data directory.
-
-        Args:
-            data_dir: Path to data directory
-            split: One of "train", "val"
-        """
+        """create dataset from data directory."""
         data_dir = Path(data_dir)
 
-        # Load DepMap data
+        # load DepMap data
         depmap_dir = data_dir / "depmap"
         crispr_file = depmap_dir / "crispr.csv"
         expr_file = depmap_dir / "expression.csv"
@@ -778,10 +690,10 @@ class VulnerabilityDataset(Dataset):
         expression = pd.read_csv(expr_file, index_col=0)
         cell_info = pd.read_csv(info_file)
 
-        # Create ModelID to CCLEName mapping
+        # create ModelID to CCLEName mapping
         id_map = dict(zip(cell_info["CCLEName"].dropna(), cell_info["ModelID"]))
 
-        # Load CytoCellDB
+        # load CytoCellDB
         cytocell_file = data_dir / "cytocell_db" / "CytoCellDB_Supp_File1.xlsx"
         if not cytocell_file.exists():
             raise FileNotFoundError(f"CytoCellDB file not found: {cytocell_file}")
@@ -789,7 +701,7 @@ class VulnerabilityDataset(Dataset):
         logger.info("Loading CytoCellDB...")
         cyto_df = pd.read_excel(cytocell_file)
 
-        # Map CCLE names to ModelIDs and create ecDNA labels
+        # map CCLE names to ModelIDs and create ecDNA labels
         cyto_df["ModelID"] = cyto_df["CCLE_Name_Format"].map(id_map)
         cyto_df = cyto_df.dropna(subset=["ModelID"])
 
@@ -799,13 +711,13 @@ class VulnerabilityDataset(Dataset):
             index=cyto_df["ModelID"].values
         )
 
-        # Find common samples
+        # find common samples
         common_ids = sorted(
             set(crispr.index) & set(expression.index) & set(ecdna_labels.index)
         )
         logger.info(f"Found {len(common_ids)} cell lines with all data")
 
-        # Split
+        # split
         np.random.seed(seed)
         indices = np.random.permutation(len(common_ids))
 
@@ -821,7 +733,7 @@ class VulnerabilityDataset(Dataset):
 
         split_ids = [common_ids[i] for i in split_indices]
 
-        # Subset data
+        # subset data
         crispr_split = crispr.loc[split_ids]
         expr_split = expression.loc[split_ids]
         labels_split = ecdna_labels.loc[split_ids]
@@ -831,7 +743,7 @@ class VulnerabilityDataset(Dataset):
         logger.info(f"VulnerabilityDataset ({split}): {len(split_ids)} samples, "
                     f"{n_pos} ecDNA+, {n_neg} ecDNA-")
 
-        # Create instance
+        # create instance
         instance = object.__new__(cls)
         instance.crispr = crispr_split
         instance.expression = expr_split

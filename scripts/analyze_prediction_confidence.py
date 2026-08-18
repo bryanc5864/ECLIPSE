@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Prediction confidence and uncertainty analysis for ecDNA-Former.
+prediction confidence and uncertainty analysis for ecDNA-Former.
 
 Analyzes:
-1. Prediction score distribution (histogram data)
-2. High-confidence correct vs incorrect predictions
-3. Entropy of predictions as uncertainty measure
-4. Predictions on specific known ecDNA cell lines
+- prediction score distribution (histogram data)
+- high-confidence correct vs incorrect predictions
+- entropy of predictions as uncertainty measure
+- predictions on specific known ecDNA cell lines
 
 Usage:
     python scripts/analyze_prediction_confidence.py
@@ -26,19 +26,18 @@ logger = logging.getLogger(__name__)
 def main():
     data_dir = Path("data")
 
-    # Load CytoCellDB for context
+    # load CytoCellDB for context
     cyto = pd.read_excel(data_dir / "cytocell_db" / "CytoCellDB_Supp_File1.xlsx")
     cyto = cyto.dropna(subset=["DepMap_ID"])
     ecdna_map = dict(zip(cyto["DepMap_ID"], cyto["ECDNA"]))
     lineage_map = dict(zip(cyto["DepMap_ID"], cyto["lineage"]))
     cell_line_map = dict(zip(cyto["DepMap_ID"], cyto.get("stripped_cell_line_name", cyto.get("CellLineName", cyto["DepMap_ID"]))))
 
-    # Load val data
     val_data = np.load(data_dir / "features" / "module1_features_val.npz", allow_pickle=True)
     val_ids = val_data["sample_ids"]
     val_labels = val_data["labels"]
 
-    # Load model and predict
+    # load model and predict
     from src.models import ECDNAFormer
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ECDNAFormer()
@@ -64,7 +63,7 @@ def main():
 
     logger.info(f"Validation: {len(val_ids)} samples, {int(val_labels.sum())} ecDNA+")
 
-    # 1. Score distribution
+    # score distribution
     logger.info(f"\n{'='*60}")
     logger.info("PREDICTION SCORE DISTRIBUTION")
     logger.info(f"{'='*60}")
@@ -82,7 +81,7 @@ def main():
         rate = pos_counts[i] / counts[i] if counts[i] > 0 else 0
         logger.info(f"  [{lo:.1f}, {hi:.1f}) {counts[i]:>6d} {pos_counts[i]:>7d} {rate:>9.1%}")
 
-    # 2. Binary entropy as uncertainty
+    # binary entropy as uncertainty
     logger.info(f"\n{'='*60}")
     logger.info("UNCERTAINTY (Binary Entropy)")
     logger.info(f"{'='*60}")
@@ -94,16 +93,16 @@ def main():
     logger.info(f"  High confidence (entropy < 0.5): {(entropy < 0.5).sum()} ({(entropy < 0.5).mean():.1%})")
     logger.info(f"  Uncertain (entropy > 0.8): {(entropy > 0.8).sum()} ({(entropy > 0.8).mean():.1%})")
 
-    # 3. Confident correct vs incorrect
+    # confident correct vs incorrect
     logger.info(f"\n{'='*60}")
     logger.info("CONFIDENT PREDICTIONS ANALYSIS")
     logger.info(f"{'='*60}")
 
-    threshold = 0.35  # Best F1 threshold from calibration analysis
+    threshold = 0.35  # best F1 threshold from calibration analysis
     y_pred = (predictions >= threshold).astype(int)
     correct = (y_pred == val_labels)
 
-    # True positives (confident correct)
+    # true positives (confident correct)
     tp_mask = (y_pred == 1) & (val_labels == 1)
     fp_mask = (y_pred == 1) & (val_labels == 0)
     fn_mask = (y_pred == 0) & (val_labels == 1)
@@ -139,7 +138,7 @@ def main():
             logger.info(f"    {cell_line_map.get(sid, sid)}: pred={predictions[idx]:.3f}, "
                        f"label={ecdna_label}, lineage={lineage_map.get(sid, 'unknown')}")
 
-    # 4. Known ecDNA cell lines
+    # known ecDNA cell lines
     logger.info(f"\n{'='*60}")
     logger.info("KNOWN ecDNA CELL LINES IN VALIDATION")
     logger.info(f"{'='*60}")
@@ -157,7 +156,7 @@ def main():
                     logger.info(f"  {cell_name}: pred={predictions[idx]:.3f}, "
                                f"label=Y, lineage={lineage_map.get(row['DepMap_ID'], '?')}")
 
-    # Save
+    # save
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 

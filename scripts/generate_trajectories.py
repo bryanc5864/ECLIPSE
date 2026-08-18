@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""
-Generate ecDNA trajectories for CircularODE training.
-Runs ecSimulator in batch mode to create ~500 trajectories.
+"""generate ecDNA trajectories for CircularODE training.
+
+runs ecSimulator in batch mode to make ~500 trajectories.
 """
 
 import subprocess
@@ -11,9 +11,8 @@ import time
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-# Configuration
 NUM_TRAJECTORIES = 500
-MAX_WORKERS = 4  # Parallel processes
+MAX_WORKERS = 4  # parallel processes
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = SCRIPT_DIR.parent
 REF_FASTA = PROJECT_DIR / "data" / "reference" / "hg38.fa"
@@ -24,7 +23,7 @@ def generate_single_trajectory(traj_id: int) -> dict:
     """Generate a single ecDNA trajectory."""
     output_prefix = OUTPUT_DIR / f"traj_{traj_id:04d}"
 
-    # Skip if already exists
+    # skip if already exists
     cycles_file = Path(f"{output_prefix}_amplicon1_cycles.txt")
     if cycles_file.exists():
         return {"id": traj_id, "status": "skipped", "message": "Already exists"}
@@ -62,10 +61,9 @@ def main():
     print(f"Using {MAX_WORKERS} parallel workers")
     print("-" * 60)
 
-    # Create output directory
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Check reference exists
+    # check reference exists
     if not REF_FASTA.exists():
         print(f"ERROR: Reference fasta not found: {REF_FASTA}")
         sys.exit(1)

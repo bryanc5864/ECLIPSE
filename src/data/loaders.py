@@ -1,5 +1,5 @@
 """
-Data loaders for ECLIPSE.
+data loaders for ECLIPSE.
 
 Provides unified interfaces for loading:
 - AmpliconRepository (ecDNA annotations)
@@ -40,15 +40,10 @@ class BaseLoader(ABC):
 
 class AmpliconRepositoryLoader(BaseLoader):
     """
-    Load ecDNA annotations from AmpliconRepository.
+    load ecDNA annotations from AmpliconRepository.
 
     AmpliconRepository contains AmpliconArchitect outputs for ~4,500 tumor samples
     with classifications: Circular (ecDNA), BFB, Linear.
-
-    Attributes:
-        samples: DataFrame of sample metadata
-        classifications: DataFrame of amplicon classifications
-        amplicons: DataFrame of amplicon details
     """
 
     def __init__(self, data_dir: str = "data/amplicon_repository"):
@@ -58,13 +53,8 @@ class AmpliconRepositoryLoader(BaseLoader):
         self.amplicons = None
 
     def load(self) -> pd.DataFrame:
-        """
-        Load AmpliconRepository data.
-
-        Returns:
-            DataFrame with sample-level ecDNA annotations
-        """
-        # Load sample metadata
+        """load AmpliconRepository data."""
+        # load sample metadata
         samples_path = self.data_dir / "samples.csv"
         if samples_path.exists():
             self.samples = pd.read_csv(samples_path)
@@ -72,7 +62,7 @@ class AmpliconRepositoryLoader(BaseLoader):
             logger.warning("Samples file not found, creating mock data")
             self.samples = self._create_mock_samples()
 
-        # Load classifications
+        # load classifications
         class_path = self.data_dir / "classifications.csv"
         if class_path.exists():
             self.classifications = pd.read_csv(class_path)
@@ -80,7 +70,7 @@ class AmpliconRepositoryLoader(BaseLoader):
             logger.warning("Classifications file not found, creating mock data")
             self.classifications = self._create_mock_classifications()
 
-        # Merge to create unified view
+        # merge to create unified view
         return self._merge_data()
 
     def _merge_data(self) -> pd.DataFrame:
@@ -88,10 +78,10 @@ class AmpliconRepositoryLoader(BaseLoader):
         if self.samples is None or self.classifications is None:
             raise ValueError("Data not loaded")
 
-        # Create sample-level summary
+        # create sample-level summary
         merged = self.samples.copy()
 
-        # Add ecDNA status based on classifications
+        # add ecDNA status based on classifications
         if "sample_id" in self.classifications.columns:
             ecdna_samples = self.classifications[
                 self.classifications["classification"] == "Circular"
@@ -177,7 +167,7 @@ class AmpliconRepositoryLoader(BaseLoader):
 
 class CytoCellDBLoader(BaseLoader):
     """
-    Load cell line ecDNA annotations from CytoCellDB.
+    load cell line ecDNA annotations from CytoCellDB.
 
     CytoCellDB contains 577 cell lines with cytogenetically-validated
     ecDNA status, linked to DepMap identifiers.
@@ -189,7 +179,7 @@ class CytoCellDBLoader(BaseLoader):
 
     def load(self) -> pd.DataFrame:
         """Load CytoCellDB annotations."""
-        # Try to load from file
+        # try to load from file
         for filename in ["cytocell_annotations.csv", "cytocell_template.csv"]:
             filepath = self.data_dir / filename
             if filepath.exists():
@@ -262,7 +252,7 @@ class CytoCellDBLoader(BaseLoader):
 
 class DepMapLoader(BaseLoader):
     """
-    Load DepMap data (CRISPR screens, expression, etc.).
+    load DepMap data (CRISPR screens, expression, etc.).
 
     DepMap provides genome-wide CRISPR knockout screens across 1000+ cell lines,
     along with multi-omics data (expression, copy number, mutations).
@@ -335,16 +325,7 @@ class DepMapLoader(BaseLoader):
         cell_lines: Optional[List[str]] = None,
         genes: Optional[List[str]] = None
     ) -> pd.DataFrame:
-        """
-        Get CRISPR dependency scores for specified cell lines and genes.
-
-        Args:
-            cell_lines: List of DepMap IDs (e.g., ACH-000001)
-            genes: List of gene symbols
-
-        Returns:
-            DataFrame of dependency scores
-        """
+        """get CRISPR dependency scores for specified cell lines and genes."""
         df = self.crispr.copy()
 
         if cell_lines is not None:
@@ -361,22 +342,12 @@ class DepMapLoader(BaseLoader):
         group2_ids: List[str],
         method: str = "ttest"
     ) -> pd.DataFrame:
-        """
-        Compute differential dependencies between two groups.
-
-        Args:
-            group1_ids: DepMap IDs for group 1 (e.g., ecDNA+)
-            group2_ids: DepMap IDs for group 2 (e.g., ecDNA-)
-            method: Statistical test ("ttest" or "mannwhitneyu")
-
-        Returns:
-            DataFrame with differential dependency statistics
-        """
+        """compute differential dependencies between two groups."""
         from scipy import stats
 
         crispr = self.crispr
 
-        # Filter to available cell lines
+        # filter to available cell lines
         group1_ids = [x for x in group1_ids if x in crispr.index]
         group2_ids = [x for x in group2_ids if x in crispr.index]
 
@@ -426,7 +397,7 @@ class DepMapLoader(BaseLoader):
         cell_lines = [f"ACH-{i:06d}" for i in range(n_lines)]
         genes = [f"GENE{i}" for i in range(n_genes)]
 
-        # Add known cancer genes
+        # add known cancer genes
         cancer_genes = ["MYC", "EGFR", "TP53", "KRAS", "BRCA1", "CDK4", "MDM2"]
         genes[:len(cancer_genes)] = cancer_genes
 
@@ -455,7 +426,7 @@ class DepMapLoader(BaseLoader):
         cell_lines = [f"ACH-{i:06d}" for i in range(n_lines)]
         genes = [f"GENE{i}" for i in range(n_genes)]
 
-        # Most genes diploid (2), with some amplifications
+        # most genes diploid (2), with some amplifications
         data = np.full((n_lines, n_genes), 2.0)
         amp_mask = np.random.random((n_lines, n_genes)) < 0.05
         data[amp_mask] = np.random.uniform(3, 20, amp_mask.sum())
@@ -485,7 +456,7 @@ class DepMapLoader(BaseLoader):
 
 class HiCLoader(BaseLoader):
     """
-    Load Hi-C chromatin contact data.
+    load Hi-C chromatin contact data.
 
     Supports loading from:
     - Cooler format (.cool, .mcool)
@@ -501,7 +472,7 @@ class HiCLoader(BaseLoader):
         if cell_line:
             return self._load_single(cell_line)
 
-        # Load all available
+        # load all available
         for path in self.data_dir.glob("*.mcool"):
             name = path.stem
             self.contact_matrices[name] = self._load_mcool(path)
@@ -557,20 +528,10 @@ class HiCLoader(BaseLoader):
         chromosome: str = None,
         threshold: float = 0.01
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Convert Hi-C matrix to a graph representation.
-
-        Args:
-            cell_line: Cell line name
-            chromosome: Chromosome to extract (optional)
-            threshold: Minimum contact frequency for edge
-
-        Returns:
-            Tuple of (edge_index, edge_weights)
-        """
+        """convert Hi-C matrix to a graph representation."""
         matrix = self._load_single(cell_line)
 
-        # Threshold to create sparse graph
+        # threshold to create sparse graph
         edges = np.where(matrix > threshold)
         edge_index = np.array([edges[0], edges[1]])
         edge_weights = matrix[edges]
@@ -581,20 +542,20 @@ class HiCLoader(BaseLoader):
         """Create mock Hi-C contact matrix."""
         np.random.seed(42)
 
-        # Create distance-dependent contact decay
+        # create distance-dependent contact decay
         i, j = np.meshgrid(np.arange(size), np.arange(size))
         distance = np.abs(i - j)
 
-        # Exponential decay with distance
+        # exponential decay with distance
         contacts = np.exp(-distance / 50)
 
-        # Add TAD structure (block diagonal)
+        # add TAD structure (block diagonal)
         tad_size = 50
         for start in range(0, size, tad_size):
             end = min(start + tad_size, size)
             contacts[start:end, start:end] *= 2
 
-        # Symmetrize and normalize
+        # symmetrize and normalize
         contacts = (contacts + contacts.T) / 2
         contacts = contacts / contacts.max()
 
@@ -629,16 +590,7 @@ class FragileSiteLoader(BaseLoader):
         chromosome: str,
         position: int
     ) -> Tuple[float, str]:
-        """
-        Get distance to nearest fragile site.
-
-        Args:
-            chromosome: Chromosome (e.g., "chr3")
-            position: Genomic position
-
-        Returns:
-            Tuple of (distance, site_id)
-        """
+        """get distance to nearest fragile site."""
         if self.sites is None:
             self.load()
 
@@ -647,7 +599,7 @@ class FragileSiteLoader(BaseLoader):
         if len(chrom_sites) == 0:
             return float('inf'), None
 
-        # Calculate distances to midpoints
+        # calculate distances to midpoints
         midpoints = (chrom_sites["start"] + chrom_sites["end"]) / 2
         distances = np.abs(midpoints - position)
 

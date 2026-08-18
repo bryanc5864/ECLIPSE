@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Validate VulnCausal hits against REAL GDSC2 drug sensitivity data.
+validate VulnCausal hits against REAL GDSC2 drug sensitivity data.
 
 Cross-references CytoCellDB ecDNA annotations with GDSC2 IC50 values
 to test whether ecDNA+ cell lines are more sensitive to drugs targeting
 our identified vulnerability genes.
-
 Data sources:
 - GDSC2: https://www.cancerrxgene.org/ (release 8.5)
 - CytoCellDB: Fessler et al. NAR Cancer 2024
@@ -32,7 +31,7 @@ def load_data():
     cyto['is_ecdna'] = cyto['ECDNA'] == 'Y'
     print(f"  {len(cyto)} cell lines ({cyto['is_ecdna'].sum()} ecDNA+, {(~cyto['is_ecdna']).sum()} ecDNA-)")
 
-    # Merge via COSMIC ID
+    # merge via COSMIC ID
     cyto_map = cyto[['COSMICID', 'is_ecdna', 'stripped_cell_line_name']].dropna(subset=['COSMICID'])
     cyto_map['COSMICID'] = cyto_map['COSMICID'].astype(int)
     cyto_map = cyto_map.drop_duplicates(subset='COSMICID')
@@ -46,13 +45,13 @@ def load_data():
     return merged
 
 
-# Drugs in GDSC2 that target our vulnerability pathways
+# drugs in GDSC2 that target our vulnerability pathways
 DRUG_QUERIES = [
     # CHK1 pathway (our top validated hit)
     {'gene': 'CHK1', 'drug_names': ['AZD7762', 'MK-8776'], 'putative_targets': ['CHEK1', 'CHEK2', 'CHK1']},
     # CDK inhibitors (CDK1 hit)
     {'gene': 'CDK1', 'drug_names': ['Dinaciclib', 'AT-7519', 'AZD5438', 'RO-3306', 'Palbociclib', 'Ribociclib', 'Abemaciclib'], 'putative_targets': ['CDK1', 'CDK2', 'CDK4', 'CDK6', 'CDK9']},
-    # Proteasome inhibitors (PSMD7 hit)
+    # proteasome inhibitors (PSMD7 hit)
     {'gene': 'PSMD7', 'drug_names': ['Bortezomib', 'MG-132'], 'putative_targets': ['PSMB5', 'proteasome']},
     # BCL-XL/apoptosis (BCL2L1 hit)
     {'gene': 'BCL2L1', 'drug_names': ['Navitoclax', 'ABT-737', 'Venetoclax'], 'putative_targets': ['BCL2', 'BCL-XL', 'BCL2L1']},
@@ -60,17 +59,17 @@ DRUG_QUERIES = [
     {'gene': 'ORC6/MCM2', 'drug_names': ['Gemcitabine', 'Cytarabine', '5-Fluorouracil'], 'putative_targets': ['DNA replication', 'antimetabolite']},
     # Mitosis/kinesin (KIF11 hit)
     {'gene': 'KIF11', 'drug_names': ['Ispinesib', 'GSK461364', 'BI-2536', 'Volasertib'], 'putative_targets': ['KIF11', 'PLK1', 'KSP']},
-    # Spliceosome (SNRPF hit)
+    # spliceosome (SNRPF hit)
     {'gene': 'SNRPF', 'drug_names': ['Pladienolide B', 'E7107'], 'putative_targets': ['SF3B1', 'spliceosome']},
 ]
 
 
 def find_drugs_in_gdsc(merged, query):
     """Find matching drugs in GDSC2 for a given query."""
-    # Try matching by drug name first
+    # try matching by drug name first
     drug_mask = merged['DRUG_NAME'].str.upper().isin([d.upper() for d in query['drug_names']])
 
-    # Also try matching by putative target
+    # also try matching by putative target
     for target in query['putative_targets']:
         target_mask = merged['PUTATIVE_TARGET'].str.contains(target, case=False, na=False)
         drug_mask = drug_mask | target_mask
@@ -89,7 +88,7 @@ def analyze_drug(drug_data, drug_name, gene_target):
     # Mann-Whitney U test (one-sided: ecDNA+ more sensitive = lower IC50)
     stat, pval = stats.mannwhitneyu(ecdna_pos, ecdna_neg, alternative='less')
 
-    # Effect size
+    # effect size
     mean_diff = ecdna_neg.mean() - ecdna_pos.mean()
     selectivity_ratio = np.exp(mean_diff)
 
@@ -97,7 +96,7 @@ def analyze_drug(drug_data, drug_name, gene_target):
     pooled_std = np.sqrt((ecdna_pos.std()**2 + ecdna_neg.std()**2) / 2)
     cohens_d = mean_diff / pooled_std if pooled_std > 0 else 0
 
-    # Also do two-sided t-test
+    # also do two-sided t-test
     t_stat, t_pval = stats.ttest_ind(ecdna_pos, ecdna_neg)
 
     return {
@@ -124,7 +123,7 @@ def main():
 
     merged = load_data()
 
-    # List all available drugs
+    # list all available drugs
     all_drugs = sorted(merged['DRUG_NAME'].unique())
     print(f"\nAvailable drugs in merged dataset: {len(all_drugs)}")
 
@@ -138,7 +137,7 @@ def main():
         print(f"Target keywords: {', '.join(query['putative_targets'])}")
         print(f"{'='*70}")
 
-        # Find matching drugs
+        # find matching drugs
         drug_subset = find_drugs_in_gdsc(merged, query)
 
         if len(drug_subset) == 0:
@@ -167,7 +166,6 @@ def main():
             print(f"    Cohen's d: {result['cohens_d']:.3f}")
             print(f"    P-value (MW): {result['mw_pvalue']:.4f} {sig}")
 
-    # Summary
     if results:
         df_results = pd.DataFrame(results)
 
@@ -186,7 +184,7 @@ def main():
         print(f"\nSignificant (p<0.05): {n_sig}/{n_total}")
         print(f"Mean selectivity ratio: {df_results['selectivity_ratio'].mean():.2f}x")
 
-        # By gene target
+        # by gene target
         print("\n" + "=" * 80)
         print("SUMMARY BY GENE TARGET")
         print("=" * 80)
@@ -215,7 +213,7 @@ def main():
                 fdr_sig = i + 1
         print(f"FDR significant (BH, q<0.05): {fdr_sig}/{n_total}")
 
-        # Save
+        # save
         output_dir = Path("data/validation")
         output_dir.mkdir(exist_ok=True, parents=True)
         df_results.to_csv(output_dir / "vulncausal_gdsc_real_validation.csv", index=False)

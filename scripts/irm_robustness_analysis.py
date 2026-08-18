@@ -5,12 +5,10 @@ IRM environment robustness analysis for VulnCausal (Module 3).
 Validates that IRM environments (real lineages) are meaningful by comparing
 against shuffled and random environment assignments. Uses the standalone
 InvariantRiskMinimization predictor for fast iteration.
-
 Three conditions:
-  - real: environments = actual lineage integers (31 lineages)
-  - shuffled: np.random.permutation(real_environments)
-  - random: np.random.randint(0, 31, size=n)
-
+- real: environments = actual lineage integers (31 lineages)
+- shuffled: np.random.permutation(real_environments)
+- random: np.random.randint(0, 31, size=n)
 Metrics: IRM penalty magnitude, ERM loss, vulnerability ranking
 correlation (Spearman).
 
@@ -53,7 +51,7 @@ def load_data(data_dir: Path):
     labels['is_ecdna'] = (labels['ECDNA'] == 'Y').astype(int)
     labels = labels.set_index('DepMap_ID')
 
-    # Find common samples
+    # find common samples
     common = sorted(set(crispr.index) & set(expression.index) & set(labels.index))
     logger.info(f"Common samples: {len(common)}")
 
@@ -81,7 +79,7 @@ def create_features(crispr, top_k=200):
 
 def train_irm_model(X, y, envs, n_envs, epochs, device, lr=1e-3):
     """
-    Train a standalone IRM predictor and return per-epoch metrics.
+    train a standalone IRM predictor and return per-epoch metrics.
 
     Returns dict with final erm_loss, irm_penalty, and gene rankings.
     """
@@ -114,7 +112,7 @@ def train_irm_model(X, y, envs, n_envs, epochs, device, lr=1e-3):
         final_erm = losses['erm_loss'].item()
         final_irm = losses['irm_penalty'].item()
 
-    # Get gene-level rankings (using model weights as proxy for importance)
+    # get gene-level rankings (using model weights as proxy for importance)
     model.eval()
     with torch.no_grad():
         logits = model(X_t).squeeze(-1)
@@ -142,8 +140,8 @@ def main():
     crispr, ecdna, real_envs, gene_names, n_envs = load_data(data_dir)
     X, top_gene_idx = create_features(crispr, top_k=200)
 
-    # Binary labels: is sample ecDNA-dependent for each gene? Use median split.
-    # For ranking purposes, use the ecDNA labels directly.
+    # binary labels: is sample ecDNA-dependent for each gene? Use median split.
+    # for ranking purposes, use the ecDNA labels directly.
     y = ecdna
 
     logger.info(f"\nUsing {X.shape[1]} top-variance genes as input features")
@@ -152,7 +150,6 @@ def main():
     rng = np.random.RandomState(args.seed)
     all_results = []
 
-    # ---------- Real environments ----------
     logger.info(f"\n{'='*60}")
     logger.info("Condition: REAL environments")
     logger.info(f"{'='*60}")
@@ -168,7 +165,6 @@ def main():
     logger.info(f"  ERM loss:    {real_result['erm_loss']:.4f}")
     logger.info(f"  IRM penalty: {real_result['irm_penalty']:.6f}")
 
-    # ---------- Shuffled environments ----------
     logger.info(f"\n{'='*60}")
     logger.info("Condition: SHUFFLED environments")
     logger.info(f"{'='*60}")
@@ -186,7 +182,6 @@ def main():
         shuffled_preds_list.append(result['predictions'])
         logger.info(f"  Shuffle {s}: ERM={result['erm_loss']:.4f}, IRM={result['irm_penalty']:.6f}")
 
-    # ---------- Random environments ----------
     logger.info(f"\n{'='*60}")
     logger.info("Condition: RANDOM environments")
     logger.info(f"{'='*60}")
@@ -204,7 +199,6 @@ def main():
         random_preds_list.append(result['predictions'])
         logger.info(f"  Random {s}: ERM={result['erm_loss']:.4f}, IRM={result['irm_penalty']:.6f}")
 
-    # ---------- Ranking correlations ----------
     logger.info(f"\n{'='*60}")
     logger.info("Ranking Correlations (Spearman vs real)")
     logger.info(f"{'='*60}")
@@ -228,7 +222,6 @@ def main():
         })
         logger.info(f"  Real vs Random  {s}: rho={rho:.3f}, p={pval:.4f}")
 
-    # ---------- Save results ----------
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 
@@ -238,7 +231,6 @@ def main():
     corr_df = pd.DataFrame(corr_results)
     corr_df.to_csv(output_dir / "irm_ranking_correlations.csv", index=False)
 
-    # ---------- Summary ----------
     logger.info(f"\n{'='*60}")
     logger.info("SUMMARY")
     logger.info(f"{'='*60}")

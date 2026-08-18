@@ -18,76 +18,38 @@ from .heads import FormationHead, OncogeneHead, UncertaintyHead
 
 
 class ECDNAFormer(nn.Module):
-    """
-    ecDNA-Former: Topological Deep Learning for ecDNA Formation Prediction.
-
-    A multi-modal transformer that predicts ecDNA formation probability
-    from genomic context, including:
-    - DNA sequence features (via DNA language model)
-    - Chromatin topology (via hierarchical graph transformer)
-    - Chromosomal fragile site context
-    - Copy number features
-
-    Innovations:
-    1. Circular-aware positional encoding for ecDNA
-    2. Multi-resolution Hi-C encoding
-    3. Fragile site attention
-    4. Bottleneck cross-modal fusion
-    """
+    """ecDNA-Former: Topological Deep Learning for ecDNA Formation Prediction."""
 
     def __init__(
         self,
-        # Sequence encoder config
+        # sequence encoder config
         sequence_model: str = "cnn",  # "nucleotide_transformer", "dnabert2", or "cnn"
         sequence_dim: int = 256,
         max_sequence_length: int = 6000,
         freeze_sequence_encoder: bool = True,
-        # Topology encoder config
+        # topology encoder config
         topology_input_dim: int = 16,
         topology_hidden_dim: int = 256,
         topology_output_dim: int = 256,
         num_topology_levels: int = 4,
-        # Fragile site encoder config
+        # fragile site encoder config
         num_fragile_sites: int = 100,
         fragile_hidden_dim: int = 128,
         fragile_output_dim: int = 64,
-        # Fusion config
+        # fusion config
         fusion_type: str = "bottleneck",  # "bottleneck", "hierarchical", or "gated"
         fusion_dim: int = 256,
         num_bottleneck_tokens: int = 16,
-        # Prediction heads config
+        # prediction heads config
         num_oncogenes: int = 20,
         use_uncertainty: bool = False,
-        # General config
+        # general config
         dropout: float = 0.1,
     ):
-        """
-        Initialize ecDNA-Former.
-
-        Args:
-            sequence_model: Type of sequence encoder
-            sequence_dim: Sequence embedding dimension
-            max_sequence_length: Maximum sequence length
-            freeze_sequence_encoder: Whether to freeze pre-trained weights
-            topology_input_dim: Input dimension for topology encoder
-            topology_hidden_dim: Hidden dimension for topology encoder
-            topology_output_dim: Output dimension for topology encoder
-            num_topology_levels: Number of hierarchical levels
-            num_fragile_sites: Maximum fragile sites to consider
-            fragile_hidden_dim: Hidden dimension for fragile site encoder
-            fragile_output_dim: Output dimension for fragile site encoder
-            fusion_type: Type of cross-modal fusion
-            fusion_dim: Dimension of fused representation
-            num_bottleneck_tokens: Number of bottleneck tokens for fusion
-            num_oncogenes: Number of oncogenes to predict
-            use_uncertainty: Whether to use uncertainty estimation
-            dropout: Dropout rate
-        """
         super().__init__()
 
         self.use_uncertainty = use_uncertainty
 
-        # === Module 1: Sequence Encoder ===
         self.sequence_encoder = SequenceEncoder(
             model_name=sequence_model,
             pretrained=(sequence_model != "cnn"),
@@ -97,7 +59,6 @@ class ECDNAFormer(nn.Module):
             freeze_encoder=freeze_sequence_encoder,
         )
 
-        # === Module 2: Topology Encoder ===
         self.topology_encoder = TopologyEncoder(
             input_dim=topology_input_dim,
             hidden_dim=topology_hidden_dim,
@@ -106,14 +67,12 @@ class ECDNAFormer(nn.Module):
             dropout=dropout,
         )
 
-        # === Module 3: Fragile Site Encoder ===
         self.fragile_encoder = FragileSiteEncoder(
             num_fragile_sites=num_fragile_sites,
             hidden_dim=fragile_hidden_dim,
             output_dim=fragile_output_dim,
         )
 
-        # === Module 4: Copy Number Encoder ===
         self.cn_encoder = nn.Sequential(
             nn.Linear(32, 64),
             nn.LayerNorm(64),
@@ -121,7 +80,6 @@ class ECDNAFormer(nn.Module):
             nn.Linear(64, 64),
         )
 
-        # === Cross-Modal Fusion ===
         modality_dims = {
             "sequence": sequence_dim,
             "topology": topology_output_dim,
@@ -141,7 +99,7 @@ class ECDNAFormer(nn.Module):
             self.fusion = HierarchicalFusion(
                 sequence_dim=sequence_dim,
                 topology_dim=topology_output_dim,
-                fragile_dim=fragile_output_dim + 64,  # Include CN
+                fragile_dim=fragile_output_dim + 64,  # include CN
                 hidden_dim=fusion_dim,
                 output_dim=fusion_dim,
                 dropout=dropout,
@@ -158,7 +116,6 @@ class ECDNAFormer(nn.Module):
 
         self.fusion_type = fusion_type
 
-        # === Prediction Heads ===
         self.formation_head = FormationHead(
             input_dim=fusion_dim,
             hidden_dim=fusion_dim,
@@ -181,31 +138,31 @@ class ECDNAFormer(nn.Module):
 
     def forward(
         self,
-        # Sequence inputs
+        # sequence inputs
         sequences: Optional[torch.Tensor] = None,
         sequence_mask: Optional[torch.Tensor] = None,
         sequence_features: Optional[torch.Tensor] = None,
-        # Topology inputs
+        # topology inputs
         node_features: Optional[torch.Tensor] = None,
         edge_index: Optional[torch.Tensor] = None,
         edge_attr: Optional[torch.Tensor] = None,
         batch: Optional[torch.Tensor] = None,
         topology_features: Optional[torch.Tensor] = None,
-        # Fragile site inputs
+        # fragile site inputs
         fragile_site_features: Optional[torch.Tensor] = None,
         query_positions: Optional[torch.Tensor] = None,
         fragile_positions: Optional[torch.Tensor] = None,
         fragile_types: Optional[torch.Tensor] = None,
         fragile_chromosomes: Optional[torch.Tensor] = None,
         query_chromosomes: Optional[torch.Tensor] = None,
-        # Copy number inputs
+        # copy number inputs
         copy_number_features: Optional[torch.Tensor] = None,
-        # Control flags
+        # control flags
         is_circular: Optional[torch.Tensor] = None,
         return_embeddings: bool = False,
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass through ecDNA-Former.
+        forward pass through ecDNA-Former.
 
         Args:
             sequences: DNA sequences [batch, seq_len]
@@ -225,11 +182,7 @@ class ECDNAFormer(nn.Module):
             copy_number_features: Copy number features
             is_circular: Whether regions are circular
             return_embeddings: Whether to return intermediate embeddings
-
-        Returns:
-            Dictionary with predictions and optionally embeddings
         """
-        # === Encode Sequences ===
         if sequence_features is not None:
             seq_emb = sequence_features
         elif sequences is not None:
@@ -237,7 +190,7 @@ class ECDNAFormer(nn.Module):
                 sequences, sequence_mask, is_circular
             )
         else:
-            # Use placeholder
+            # use placeholder
             batch_size = self._infer_batch_size(
                 node_features, topology_features, copy_number_features
             )
@@ -246,7 +199,6 @@ class ECDNAFormer(nn.Module):
             )
             seq_emb = torch.zeros(batch_size, 256, device=device)
 
-        # === Encode Topology ===
         if topology_features is not None:
             topo_emb = topology_features
         elif node_features is not None and edge_index is not None:
@@ -257,7 +209,6 @@ class ECDNAFormer(nn.Module):
             batch_size = seq_emb.shape[0]
             topo_emb = torch.zeros(batch_size, 256, device=seq_emb.device)
 
-        # === Encode Fragile Sites ===
         if fragile_site_features is not None:
             frag_emb = fragile_site_features
         elif query_positions is not None and fragile_positions is not None:
@@ -272,14 +223,12 @@ class ECDNAFormer(nn.Module):
             batch_size = seq_emb.shape[0]
             frag_emb = torch.zeros(batch_size, 64, device=seq_emb.device)
 
-        # === Encode Copy Number ===
         if copy_number_features is not None:
             cn_emb = self.cn_encoder(copy_number_features)
         else:
             batch_size = seq_emb.shape[0]
             cn_emb = torch.zeros(batch_size, 64, device=seq_emb.device)
 
-        # === Fuse Modalities ===
         if self.fusion_type == "hierarchical":
             fused = self.fusion(
                 seq_emb, topo_emb,
@@ -293,7 +242,6 @@ class ECDNAFormer(nn.Module):
                 "copy_number": cn_emb,
             })
 
-        # === Predictions ===
         formation_prob = self.formation_head(fused)
         oncogene_probs, cooccurrence = self.oncogene_head(fused)
 
@@ -341,23 +289,10 @@ class ECDNAFormer(nn.Module):
         oncogene_weight: float = 0.5,
         focal_gamma: float = 2.0,
     ) -> Dict[str, torch.Tensor]:
-        """
-        Compute training loss.
-
-        Args:
-            outputs: Model outputs
-            formation_labels: Binary ecDNA formation labels
-            oncogene_labels: Multi-label oncogene labels
-            formation_weight: Weight for formation loss
-            oncogene_weight: Weight for oncogene loss
-            focal_gamma: Gamma for focal loss
-
-        Returns:
-            Dictionary with loss components
-        """
+        """compute training loss."""
         losses = {}
 
-        # Formation loss (focal loss for class imbalance)
+        # formation loss (focal loss for class imbalance)
         formation_logits = self.formation_head(
             outputs.get("fused_embedding", torch.zeros(1)),
             return_logits=True
@@ -367,7 +302,7 @@ class ECDNAFormer(nn.Module):
         )
         losses["formation_loss"] = formation_weight * formation_loss
 
-        # Oncogene loss (only for ecDNA-positive samples)
+        # oncogene loss (only for ecDNA-positive samples)
         if oncogene_labels is not None:
             oncogene_loss = self.oncogene_head.get_loss(
                 outputs["oncogene_probabilities"],
@@ -376,7 +311,7 @@ class ECDNAFormer(nn.Module):
             )
             losses["oncogene_loss"] = oncogene_weight * oncogene_loss
 
-        # Uncertainty loss if applicable
+        # uncertainty loss if applicable
         if self.use_uncertainty:
             uncertainty_loss = self.uncertainty_head.get_loss(
                 outputs.get("fused_embedding", torch.zeros(1)),
@@ -384,7 +319,6 @@ class ECDNAFormer(nn.Module):
             )
             losses["uncertainty_loss"] = 0.1 * uncertainty_loss
 
-        # Total loss
         losses["total_loss"] = sum(losses.values())
 
         return losses
@@ -409,10 +343,9 @@ class ECDNAFormer(nn.Module):
         p = torch.sigmoid(logits)
         p_t = p * targets + (1 - p) * (1 - targets)
 
-        # Focal weight
         focal_weight = (1 - p_t) ** gamma
 
-        # Alpha balance
+        # alpha balance
         alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
 
         loss = alpha_t * focal_weight * bce
@@ -424,14 +357,13 @@ class ECDNAFormer(nn.Module):
         """Load model from checkpoint."""
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
 
-        # Extract config
+        # extract config
         config = checkpoint.get("config", {})
         config.update(kwargs)
 
-        # Create model
         model = cls(**config)
 
-        # Load weights
+        # load weights
         model.load_state_dict(checkpoint["model_state_dict"])
 
         return model

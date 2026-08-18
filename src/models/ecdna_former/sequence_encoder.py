@@ -1,5 +1,5 @@
 """
-Sequence Encoder for ecDNA-Former.
+sequence Encoder for ecDNA-Former.
 
 Encodes DNA sequences using pre-trained DNA language models.
 Supports:
@@ -33,18 +33,6 @@ class SequenceEncoder(nn.Module):
         freeze_encoder: bool = True,
         use_pooling: str = "mean",
     ):
-        """
-        Initialize sequence encoder.
-
-        Args:
-            model_name: Pre-trained model to use
-            pretrained: Whether to load pre-trained weights
-            hidden_dim: Hidden dimension
-            output_dim: Output embedding dimension
-            max_length: Maximum sequence length
-            freeze_encoder: Whether to freeze pre-trained weights
-            use_pooling: Pooling strategy ("mean", "cls", "attention")
-        """
         super().__init__()
 
         self.model_name = model_name
@@ -53,7 +41,7 @@ class SequenceEncoder(nn.Module):
         self.max_length = max_length
         self.use_pooling = use_pooling
 
-        # Initialize encoder
+        # initialize encoder
         if model_name == "nucleotide_transformer" and pretrained:
             self.encoder = self._load_nucleotide_transformer()
             self.encoder_dim = 1024  # NT output dim
@@ -61,19 +49,19 @@ class SequenceEncoder(nn.Module):
             self.encoder = self._load_dnabert2()
             self.encoder_dim = 768
         else:
-            # Use custom CNN encoder
+            # use custom CNN encoder
             self.encoder = DNACNNEncoder(
                 hidden_dim=hidden_dim,
                 output_dim=hidden_dim,
             )
             self.encoder_dim = hidden_dim
 
-        # Freeze encoder if specified
+        # freeze encoder if specified
         if freeze_encoder and pretrained:
             for param in self.encoder.parameters():
                 param.requires_grad = False
 
-        # Projection layer
+        # projection layer
         self.projection = nn.Sequential(
             nn.Linear(self.encoder_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -81,7 +69,6 @@ class SequenceEncoder(nn.Module):
             nn.Linear(hidden_dim, output_dim),
         )
 
-        # Attention pooling
         if use_pooling == "attention":
             self.attention_pool = AttentionPooling(output_dim)
 
@@ -93,7 +80,7 @@ class SequenceEncoder(nn.Module):
         try:
             from transformers import AutoModel, AutoTokenizer
 
-            # Use smaller variant for efficiency
+            # use smaller variant for efficiency
             model_id = "InstaDeepAI/nucleotide-transformer-v2-50m-multi-species"
             model = AutoModel.from_pretrained(model_id, trust_remote_code=True)
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
@@ -122,7 +109,7 @@ class SequenceEncoder(nn.Module):
         is_circular: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Encode DNA sequences.
+        encode DNA sequences.
 
         Args:
             sequences: Input sequences [batch, seq_len] or embeddings [batch, seq_len, dim]
@@ -131,12 +118,12 @@ class SequenceEncoder(nn.Module):
 
         Returns:
             Tuple of:
-                - Sequence embeddings [batch, seq_len, output_dim]
-                - Pooled embedding [batch, output_dim]
+            - Sequence embeddings [batch, seq_len, output_dim]
+            - Pooled embedding [batch, output_dim]
         """
-        # Get encoder outputs
+        # get encoder outputs
         if hasattr(self.encoder, 'config'):
-            # Hugging Face model
+            # hugging Face model
             if sequence_mask is None:
                 sequence_mask = torch.ones(sequences.shape[:2], device=sequences.device)
 
@@ -146,19 +133,19 @@ class SequenceEncoder(nn.Module):
             )
             hidden_states = outputs.last_hidden_state
         else:
-            # Custom encoder
+            # custom encoder
             hidden_states = self.encoder(sequences)
 
-        # Project to output dimension
+        # project to output dimension
         seq_embeddings = self.projection(hidden_states)
 
-        # Add circular positional encoding if applicable
+        # add circular positional encoding if applicable
         if is_circular is not None:
             circular_mask = is_circular.unsqueeze(1).unsqueeze(2)  # [B, 1, 1]
             circular_pe = self.circular_pe(seq_embeddings.shape[1])
             seq_embeddings = seq_embeddings + circular_mask * circular_pe
 
-        # Pool to get sequence-level representation
+        # pool to get sequence-level representation
         if self.use_pooling == "mean":
             if sequence_mask is not None:
                 mask = sequence_mask.unsqueeze(-1).float()
@@ -177,7 +164,7 @@ class SequenceEncoder(nn.Module):
 
 class DNACNNEncoder(nn.Module):
     """
-    Custom CNN encoder for DNA sequences.
+    custom CNN encoder for DNA sequences.
 
     Used when pre-trained models are not available or for fast inference.
     """
@@ -214,7 +201,7 @@ class DNACNNEncoder(nn.Module):
 
     def forward(self, sequences: torch.Tensor) -> torch.Tensor:
         """
-        Encode sequences with CNN.
+        encode sequences with CNN.
 
         Args:
             sequences: Token IDs [batch, seq_len]
@@ -222,19 +209,19 @@ class DNACNNEncoder(nn.Module):
         Returns:
             Sequence embeddings [batch, seq_len//4, output_dim]
         """
-        # Embed tokens
+        # embed tokens
         x = self.embedding(sequences)  # [B, L, D]
 
-        # Transpose for CNN
+        # transpose for CNN
         x = x.transpose(1, 2)  # [B, D, L]
 
-        # Apply CNN
+        # apply CNN
         x = self.cnn(x)  # [B, H, L']
 
-        # Transpose back
+        # transpose back
         x = x.transpose(1, 2)  # [B, L', H]
 
-        # Project to output
+        # project to output
         x = self.output_proj(x)
 
         return x
@@ -251,7 +238,7 @@ class CircularPositionalEncoding(nn.Module):
     def __init__(self, d_model: int, max_len: int = 6000):
         super().__init__()
 
-        # Standard sinusoidal encoding
+        # standard sinusoidal encoding
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(
@@ -263,10 +250,10 @@ class CircularPositionalEncoding(nn.Module):
 
         self.register_buffer('pe', pe)
 
-        # Circular encoding (wraps around)
+        # circular encoding (wraps around)
         circular_pe = torch.zeros(max_len, d_model)
         for i in range(max_len):
-            # Use periodic function that wraps
+            # use periodic function that wraps
             angle = 2 * math.pi * i / max_len
             for j in range(d_model // 2):
                 freq = j + 1
@@ -275,23 +262,15 @@ class CircularPositionalEncoding(nn.Module):
 
         self.register_buffer('circular_pe', circular_pe)
 
-        # Learned mixing
+        # learned mixing
         self.mix = nn.Parameter(torch.tensor(0.5))
 
     def forward(self, seq_len: int) -> torch.Tensor:
-        """
-        Get positional encoding.
-
-        Args:
-            seq_len: Sequence length
-
-        Returns:
-            Positional encoding [seq_len, d_model]
-        """
+        """get positional encoding."""
         linear = self.pe[:seq_len]
         circular = self.circular_pe[:seq_len]
 
-        # Mix linear and circular encodings
+        # mix linear and circular encodings
         mix = torch.sigmoid(self.mix)
         return mix * linear + (1 - mix) * circular
 
@@ -313,7 +292,7 @@ class AttentionPooling(nn.Module):
         mask: Optional[torch.Tensor] = None
     ) -> torch.Tensor:
         """
-        Pool sequence with attention.
+        pool sequence with attention.
 
         Args:
             x: Sequence [batch, seq_len, hidden]
@@ -322,7 +301,7 @@ class AttentionPooling(nn.Module):
         Returns:
             Pooled representation [batch, hidden]
         """
-        # Compute attention weights
+        # compute attention weights
         attn_scores = self.attention(x).squeeze(-1)  # [B, L]
 
         if mask is not None:
@@ -330,7 +309,7 @@ class AttentionPooling(nn.Module):
 
         attn_weights = F.softmax(attn_scores, dim=-1)  # [B, L]
 
-        # Weighted sum
+        # weighted sum
         pooled = torch.bmm(attn_weights.unsqueeze(1), x).squeeze(1)
 
         return pooled

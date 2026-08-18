@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pathway enrichment analysis for vulnerability candidates.
+pathway enrichment analysis for vulnerability candidates.
 
 Runs hypergeometric test for GO biological process and KEGG pathway enrichment
 on our 47 vulnerability candidates vs all 17,453 tested genes.
@@ -20,8 +20,8 @@ from scipy import stats
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Manually curated pathway annotations for ecDNA-relevant pathways
-# Based on GO Biological Process and KEGG
+# manually curated pathway annotations for ecDNA-relevant pathways
+# based on GO Biological Process and KEGG
 PATHWAY_ANNOTATIONS = {
     "GO:0007049 cell cycle": {
         "CDK1", "CDK2", "CDK4", "CDK6", "CCNA2", "CCNB1", "CCND1", "CCNE1",
@@ -96,7 +96,7 @@ PATHWAY_ANNOTATIONS = {
 
 def hypergeometric_test(candidates, pathway_genes, background_size):
     """
-    Hypergeometric test for pathway enrichment.
+    hypergeometric test for pathway enrichment.
 
     P(X >= k) where:
     - N = background_size (total genes tested)
@@ -106,7 +106,7 @@ def hypergeometric_test(candidates, pathway_genes, background_size):
     """
     overlap = candidates & pathway_genes
     k = len(overlap)
-    K = len(pathway_genes)  # Note: should intersect with background for precision
+    K = len(pathway_genes)  # should intersect with background for precision
     n = len(candidates)
     N = background_size
 
@@ -121,18 +121,18 @@ def hypergeometric_test(candidates, pathway_genes, background_size):
 def main():
     data_dir = Path("data")
 
-    # Load our candidate genes
+    # load our candidate genes
     dep_file = data_dir / "vulnerabilities" / "differential_dependency_full.csv"
     if dep_file.exists():
         dep_df = pd.read_csv(dep_file)
         all_genes = set(dep_df.iloc[:, 0].unique())
-        # Top 47 candidates (our reported set)
+        # top 47 candidates (our reported set)
         top_candidates = set(dep_df.iloc[:47, 0].unique())
     else:
         logger.error("differential_dependency_full.csv not found")
         return
 
-    # Also load top 100 if available
+    # also load top 100 if available
     top100_file = data_dir / "vulnerabilities" / "top_100_vulnerabilities.csv"
     if top100_file.exists():
         top100_df = pd.read_csv(top100_file)
@@ -146,7 +146,7 @@ def main():
     logger.info(f"Top candidates: {len(top_candidates)}")
     logger.info(f"Top 100: {len(top_100)}")
 
-    # Run enrichment for top 47 and top 100
+    # run enrichment for top 47 and top 100
     results = []
     for candidate_name, candidates in [("top_47", top_candidates), ("top_100", top_100)]:
         logger.info(f"\n{'='*60}")
@@ -176,7 +176,7 @@ def main():
                 if overlap:
                     logger.info(f"    Genes: {', '.join(sorted(overlap))}")
 
-    # Multiple testing correction (Benjamini-Hochberg)
+    # multiple testing correction (Benjamini-Hochberg)
     results_df = pd.DataFrame(results)
     for candidate_name in ["top_47", "top_100"]:
         mask = results_df["candidate_set"] == candidate_name
@@ -186,17 +186,16 @@ def main():
         adjusted = np.zeros(n_tests)
         for i, idx in enumerate(sorted_idx):
             adjusted[idx] = min(1.0, p_vals[idx] * n_tests / (i + 1))
-        # Ensure monotonicity
+        # ensure monotonicity
         for i in range(n_tests - 2, -1, -1):
             adjusted[sorted_idx[i]] = min(adjusted[sorted_idx[i]], adjusted[sorted_idx[i + 1]])
         results_df.loc[mask, "p_adjusted_bh"] = adjusted
 
-    # Save
+    # save
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
     results_df.to_csv(output_dir / "pathway_enrichment_results.csv", index=False)
 
-    # Summary
     sig = results_df[(results_df["candidate_set"] == "top_47") & (results_df["p_adjusted_bh"] < 0.05)]
     logger.info(f"\n{'='*60}")
     logger.info(f"SIGNIFICANT PATHWAYS (top_47, BH-adjusted p < 0.05): {len(sig)}")

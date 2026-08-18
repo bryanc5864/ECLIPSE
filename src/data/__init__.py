@@ -1,5 +1,5 @@
 """
-Data loading and processing modules for ECLIPSE.
+data loading and processing modules for ECLIPSE.
 
 Handles:
 - AmpliconRepository (ecDNA annotations)
@@ -38,20 +38,7 @@ def create_dataloader(
     pin_memory: bool = True,
     drop_last: bool = False,
 ):
-    """
-    Create a DataLoader with sensible defaults.
-
-    Args:
-        dataset: PyTorch dataset
-        batch_size: Batch size
-        shuffle: Whether to shuffle data
-        num_workers: Number of data loading workers
-        pin_memory: Pin memory for faster GPU transfer
-        drop_last: Drop last incomplete batch
-
-    Returns:
-        DataLoader instance
-    """
+    """create a DataLoader with sensible defaults."""
     return DataLoader(
         dataset,
         batch_size=batch_size,

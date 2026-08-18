@@ -1,5 +1,5 @@
 """
-Utilities for ECLIPSE.
+utilities for ECLIPSE.
 
 Provides:
 - Genomic utilities (coordinate handling, sequence processing)

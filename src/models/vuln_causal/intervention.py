@@ -13,11 +13,10 @@ from typing import Optional, Dict, Tuple, List
 
 class DoCalculusNetwork(nn.Module):
     """
-    Neural network for computing intervention effects.
+    neural network for computing intervention effects.
 
     Estimates P(outcome | do(treatment)) rather than
     P(outcome | treatment) by adjusting for confounders.
-
     Key innovation: First synthetic lethality model to apply
     formal causal inference using do-calculus.
     """
@@ -31,7 +30,7 @@ class DoCalculusNetwork(nn.Module):
         num_treatments: int = 1000,
     ):
         """
-        Initialize do-calculus network.
+        initialize do-calculus network.
 
         Args:
             treatment_dim: Treatment embedding dimension
@@ -45,17 +44,14 @@ class DoCalculusNetwork(nn.Module):
         self.treatment_dim = treatment_dim
         self.num_treatments = num_treatments
 
-        # Treatment embedding
         self.treatment_embedding = nn.Embedding(num_treatments, treatment_dim)
 
-        # Covariate encoder
         self.covariate_encoder = nn.Sequential(
             nn.Linear(covariate_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
         )
 
-        # Outcome model: P(Y | do(T), X)
         self.outcome_model = nn.Sequential(
             nn.Linear(treatment_dim + hidden_dim, hidden_dim),
             nn.ReLU(),
@@ -65,14 +61,13 @@ class DoCalculusNetwork(nn.Module):
             nn.Linear(hidden_dim // 2, outcome_dim),
         )
 
-        # Propensity model: P(T | X)
         self.propensity_model = nn.Sequential(
             nn.Linear(covariate_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, num_treatments),
         )
 
-        # Doubly robust estimator weights
+        # doubly robust estimator weights
         self.dr_alpha = nn.Parameter(torch.tensor(0.5))
 
     def forward(
@@ -81,7 +76,7 @@ class DoCalculusNetwork(nn.Module):
         covariates: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Predict outcome under intervention.
+        predict outcome under intervention.
 
         Args:
             treatment_ids: Treatment (gene knockout) IDs [batch]
@@ -90,13 +85,12 @@ class DoCalculusNetwork(nn.Module):
         Returns:
             Predicted outcome [batch, outcome_dim]
         """
-        # Encode treatment
+        # encode treatment
         treatment_emb = self.treatment_embedding(treatment_ids)
 
-        # Encode covariates
         cov_emb = self.covariate_encoder(covariates)
 
-        # Predict outcome
+        # predict outcome
         combined = torch.cat([treatment_emb, cov_emb], dim=-1)
         outcome = self.outcome_model(combined)
 
@@ -110,7 +104,7 @@ class DoCalculusNetwork(nn.Module):
         condition_name: str = "ecdna_status",
     ) -> Dict[str, torch.Tensor]:
         """
-        Estimate causal effect of treatment on outcome.
+        estimate causal effect of treatment on outcome.
 
         Computes: E[Y | do(T=t), C=c] for a given condition.
 
@@ -119,24 +113,21 @@ class DoCalculusNetwork(nn.Module):
             covariates: Sample covariates [batch, covariate_dim]
             condition: Conditioning variable (e.g., ecDNA status) [batch]
             condition_name: Name of condition variable
-
-        Returns:
-            Dictionary with causal effect estimates
         """
         batch_size = covariates.shape[0]
         device = covariates.device
 
         treatment_ids = torch.full((batch_size,), treatment_id, device=device)
 
-        # Predict outcome under treatment
+        # predict outcome under treatment
         outcome_treated = self.forward(treatment_ids, covariates)
 
-        # Predict outcome under control (no treatment = gene not knocked out)
-        # Use a special "no knockout" treatment
+        # predict outcome under control (no treatment = gene not knocked out)
+        # use a special "no knockout" treatment
         control_ids = torch.zeros_like(treatment_ids)
         outcome_control = self.forward(control_ids, covariates)
 
-        # Average Treatment Effect (ATE)
+        # average Treatment Effect (ATE)
         ate = (outcome_treated - outcome_control).mean()
 
         results = {
@@ -145,21 +136,21 @@ class DoCalculusNetwork(nn.Module):
             "outcome_control": outcome_control,
         }
 
-        # Conditional ATE if condition provided
+        # conditional ATE if condition provided
         if condition is not None:
-            # Effect in condition=1 group
+            # effect in condition=1 group
             mask_1 = condition > 0.5
             if mask_1.any():
                 cate_1 = (outcome_treated[mask_1] - outcome_control[mask_1]).mean()
                 results[f"cate_{condition_name}_positive"] = cate_1
 
-            # Effect in condition=0 group
+            # effect in condition=0 group
             mask_0 = condition <= 0.5
             if mask_0.any():
                 cate_0 = (outcome_treated[mask_0] - outcome_control[mask_0]).mean()
                 results[f"cate_{condition_name}_negative"] = cate_0
 
-            # Difference in effects (interaction)
+            # difference in effects (interaction)
             if mask_1.any() and mask_0.any():
                 results["effect_difference"] = cate_1 - cate_0
 
@@ -172,7 +163,7 @@ class DoCalculusNetwork(nn.Module):
         outcomes: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Inverse Probability Weighting (IPW) estimate.
+        inverse Probability Weighting (IPW) estimate.
 
         Adjusts for treatment selection bias using propensity scores.
 
@@ -180,23 +171,20 @@ class DoCalculusNetwork(nn.Module):
             treatment_ids: Observed treatments [batch]
             covariates: Covariates [batch, covariate_dim]
             outcomes: Observed outcomes [batch]
-
-        Returns:
-            IPW-adjusted outcome estimate
         """
-        # Compute propensity scores
+        # compute propensity scores
         propensity_logits = self.propensity_model(covariates)
         propensity = F.softmax(propensity_logits, dim=-1)
 
-        # Get propensity for observed treatment
+        # get propensity for observed treatment
         batch_idx = torch.arange(len(treatment_ids), device=treatment_ids.device)
         prop_observed = propensity[batch_idx, treatment_ids]
 
         # IPW weights (stabilized)
         weights = 1.0 / (prop_observed + 1e-6)
-        weights = weights / weights.sum() * len(weights)  # Normalize
+        weights = weights / weights.sum() * len(weights)  # normalize
 
-        # Weighted outcome
+        # weighted outcome
         ipw_outcome = (outcomes.squeeze() * weights).mean()
 
         return ipw_outcome
@@ -208,7 +196,7 @@ class DoCalculusNetwork(nn.Module):
         outcomes: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Doubly robust estimation combining IPW and outcome modeling.
+        doubly robust estimation combining IPW and outcome modeling.
 
         More robust than either alone - consistent if either
         propensity or outcome model is correct.
@@ -217,17 +205,13 @@ class DoCalculusNetwork(nn.Module):
             treatment_ids: Observed treatments [batch]
             covariates: Covariates [batch, covariate_dim]
             outcomes: Observed outcomes [batch]
-
-        Returns:
-            Doubly robust estimate
         """
-        # Outcome model prediction
+        # outcome model prediction
         outcome_pred = self.forward(treatment_ids, covariates).squeeze()
 
-        # IPW estimate
         ipw_est = self.compute_ipw_estimate(treatment_ids, covariates, outcomes)
 
-        # Combine with learned weight
+        # combine with learned weight
         alpha = torch.sigmoid(self.dr_alpha)
         dr_estimate = alpha * outcome_pred.mean() + (1 - alpha) * ipw_est
 
@@ -236,7 +220,7 @@ class DoCalculusNetwork(nn.Module):
 
 class VulnerabilityScoringNetwork(nn.Module):
     """
-    Scores therapeutic vulnerabilities for ecDNA-positive cells.
+    scores therapeutic vulnerabilities for ecDNA-positive cells.
 
     Combines:
     1. Causal effect size
@@ -251,22 +235,13 @@ class VulnerabilityScoringNetwork(nn.Module):
         gene_feature_dim: int = 64,
         hidden_dim: int = 128,
     ):
-        """
-        Initialize vulnerability scoring network.
-
-        Args:
-            num_genes: Number of genes to score
-            gene_feature_dim: Gene feature dimension
-            hidden_dim: Hidden dimension
-        """
         super().__init__()
 
         self.num_genes = num_genes
 
-        # Gene feature encoder
         self.gene_encoder = nn.Embedding(num_genes, gene_feature_dim)
 
-        # Vulnerability scorer
+        # vulnerability scorer
         self.scorer = nn.Sequential(
             nn.Linear(gene_feature_dim + 4, hidden_dim),  # +4 for causal features
             nn.ReLU(),
@@ -276,7 +251,7 @@ class VulnerabilityScoringNetwork(nn.Module):
             nn.Linear(hidden_dim // 2, 1),
         )
 
-        # Druggability predictor
+        # druggability predictor
         self.druggability = nn.Sequential(
             nn.Linear(gene_feature_dim, hidden_dim // 2),
             nn.ReLU(),
@@ -292,38 +267,32 @@ class VulnerabilityScoringNetwork(nn.Module):
         expression_features: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
         """
-        Score vulnerability of genes.
+        score vulnerability of genes.
 
         Args:
             gene_ids: Gene IDs [batch]
             causal_effects: Estimated causal effects [batch]
             specificity: ecDNA specificity scores [batch]
             expression_features: Optional expression context
-
-        Returns:
-            Dictionary with scores
         """
-        # Gene embeddings
+        # gene embeddings
         gene_emb = self.gene_encoder(gene_ids)
 
-        # Causal features
         causal_features = torch.stack([
             causal_effects,
             specificity,
-            torch.abs(causal_effects),  # Magnitude
-            causal_effects * specificity,  # Interaction
+            torch.abs(causal_effects),  # magnitude
+            causal_effects * specificity,  # interaction
         ], dim=-1)
 
-        # Combined features
         combined = torch.cat([gene_emb, causal_features], dim=-1)
 
-        # Vulnerability score
+        # vulnerability score
         vuln_score = self.scorer(combined)
 
-        # Druggability
         drug_score = self.druggability(gene_emb)
 
-        # Final score (vulnerability * druggability)
+        # final score (vulnerability * druggability)
         final_score = vuln_score * drug_score
 
         return {
@@ -340,39 +309,26 @@ class VulnerabilityScoringNetwork(nn.Module):
         ecdna_labels: torch.Tensor,
         top_k: int = 50,
     ) -> List[Dict]:
-        """
-        Rank all genes by vulnerability score.
-
-        Args:
-            all_gene_ids: All gene IDs to evaluate
-            do_network: Do-calculus network for causal effects
-            covariates: Sample covariates
-            ecdna_labels: ecDNA status labels
-            top_k: Number of top genes to return
-
-        Returns:
-            List of dictionaries with gene info and scores
-        """
+        """rank all genes by vulnerability score."""
         results = []
 
         for gene_id in all_gene_ids:
             gene_id_int = gene_id.item() if isinstance(gene_id, torch.Tensor) else gene_id
 
-            # Estimate causal effect
             effects = do_network.estimate_causal_effect(
                 treatment_id=gene_id_int,
                 covariates=covariates,
                 condition=ecdna_labels,
             )
 
-            # Specificity: effect_positive - effect_negative
+            # specificity: effect_positive - effect_negative
             if "cate_ecdna_status_positive" in effects and "cate_ecdna_status_negative" in effects:
                 specificity = (effects["cate_ecdna_status_positive"] -
                               effects["cate_ecdna_status_negative"])
             else:
                 specificity = torch.tensor(0.0)
 
-            # Score
+            # score
             gene_tensor = torch.tensor([gene_id_int], device=covariates.device)
             scores = self.forward(
                 gene_ids=gene_tensor,
@@ -389,7 +345,6 @@ class VulnerabilityScoringNetwork(nn.Module):
                 "final_score": scores["final_score"].item(),
             })
 
-        # Sort by final score
         results = sorted(results, key=lambda x: x["final_score"], reverse=True)
 
         return results[:top_k]

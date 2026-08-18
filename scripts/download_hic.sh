@@ -1,7 +1,7 @@
 #!/bin/bash
-# Download Hi-C data from Aiden Lab (Rao et al. 2014)
-# These are .hic files - can convert to mcool with hic2cool if needed
-# Source: https://www.aidenlab.org/data.html
+# download Hi-C data from Aiden Lab (Rao et al. 2014)
+# .hic files, convert to mcool with hic2cool if needed
+# source: https://www.aidenlab.org/data.html
 
 set -e
 
@@ -9,12 +9,12 @@ HIC_DIR="/home/bcheng/eclipse/data/hic"
 mkdir -p "$HIC_DIR"
 cd "$HIC_DIR"
 
-echo "=== Downloading Hi-C Data from Aiden Lab ==="
+echo "downloading Hi-C data from Aiden Lab"
 echo "Target directory: $HIC_DIR"
 echo "Source: Rao et al. 2014 (Cell) - GSE63525"
 echo ""
 
-# K562 - CML cell line with known ecDNA (~500MB)
+# K562, CML line with known ecDNA (~500MB)
 echo "[1/3] Downloading K562 Hi-C (~500MB)..."
 if [ ! -f "K562.hic" ]; then
     wget -q --show-progress \
@@ -25,7 +25,7 @@ else
     echo "K562.hic already exists, skipping"
 fi
 
-# IMR90 - Normal fibroblast control (~400MB)
+# IMR90, normal fibroblast control (~400MB)
 echo "[2/3] Downloading IMR90 Hi-C (~400MB)..."
 if [ ! -f "IMR90.hic" ]; then
     wget -q --show-progress \
@@ -36,7 +36,7 @@ else
     echo "IMR90.hic already exists, skipping"
 fi
 
-# HeLa - Has ecDNA, commonly studied (~300MB)
+# HeLa, has ecDNA (~300MB)
 echo "[3/3] Downloading HeLa Hi-C (~300MB)..."
 if [ ! -f "HeLa.hic" ]; then
     wget -q --show-progress \
@@ -48,7 +48,7 @@ else
 fi
 
 echo ""
-echo "=== Download Complete ==="
+echo "download complete"
 echo "Files downloaded:"
 ls -lh "$HIC_DIR"/*.hic 2>/dev/null || echo "No .hic files found"
 ls -lh "$HIC_DIR"/*.mcool 2>/dev/null || echo "No .mcool files found"
@@ -56,5 +56,5 @@ echo ""
 echo "Total Hi-C data size:"
 du -sh "$HIC_DIR"
 echo ""
-echo "NOTE: .hic files can be used directly with hic-straw or converted to mcool with hic2cool"
+echo ".hic works directly with hic-straw, or convert to mcool:"
 echo "      pip install hic2cool && hic2cool convert K562.hic K562.mcool"

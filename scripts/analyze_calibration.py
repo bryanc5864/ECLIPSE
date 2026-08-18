@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Calibration and threshold analysis for ecDNA-Former.
+calibration and threshold analysis for ecDNA-Former.
 
-1. Reliability diagram (calibration curve)
-2. Precision-recall curve with optimal threshold
-3. Threshold sweep (F1, MCC, balanced accuracy at each threshold)
-4. Brier score decomposition
+- reliability diagram (calibration curve)
+- precision-recall curve with optimal threshold
+- threshold sweep (F1, MCC, balanced accuracy at each threshold)
+- brier score decomposition
 
 Usage:
     python scripts/analyze_calibration.py
@@ -47,11 +47,10 @@ def calibration_curve_custom(y_true, y_prob, n_bins=10):
 def main():
     data_dir = Path("data")
 
-    # Load val data
     val_data = np.load(data_dir / "features" / "module1_features_val.npz", allow_pickle=True)
     y_val = val_data["labels"]
 
-    # Load model and predict
+    # load model and predict
     from src.models import ECDNAFormer
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ECDNAFormer()
@@ -79,7 +78,7 @@ def main():
     logger.info(f"Prediction range: [{y_prob.min():.3f}, {y_prob.max():.3f}]")
     logger.info(f"Mean prediction: {y_prob.mean():.3f} (base rate: {y_val.mean():.3f})")
 
-    # 1. Calibration curve
+    # calibration curve
     logger.info(f"\n{'='*60}")
     logger.info("CALIBRATION CURVE")
     logger.info(f"{'='*60}")
@@ -91,11 +90,11 @@ def main():
     brier = brier_score_loss(y_val, y_prob)
     logger.info(f"\nBrier score: {brier:.4f}")
 
-    # Expected calibration error
+    # expected calibration error
     ece = np.sum(np.abs(bin_fracs - bin_means) * bin_counts) / np.sum(bin_counts)
     logger.info(f"Expected Calibration Error (ECE): {ece:.4f}")
 
-    # 2. Threshold sweep
+    # threshold sweep
     logger.info(f"\n{'='*60}")
     logger.info("THRESHOLD SWEEP")
     logger.info(f"{'='*60}")
@@ -131,7 +130,7 @@ def main():
 
     sweep_df = pd.DataFrame(sweep_results)
 
-    # Find optimal thresholds
+    # find optimal thresholds
     if len(sweep_df) > 0:
         best_f1_row = sweep_df.loc[sweep_df["f1"].idxmax()]
         best_mcc_row = sweep_df.loc[sweep_df["mcc"].idxmax()]
@@ -142,7 +141,7 @@ def main():
         logger.info(f"  Best MCC={best_mcc_row['mcc']:.3f} at threshold={best_mcc_row['threshold']:.2f}")
         logger.info(f"  Best BalAcc={best_bal_row['balanced_accuracy']:.3f} at threshold={best_bal_row['threshold']:.2f}")
 
-    # 3. Precision-Recall curve
+    # Precision-Recall curve
     logger.info(f"\n{'='*60}")
     logger.info("PRECISION-RECALL CURVE")
     logger.info(f"{'='*60}")
@@ -152,7 +151,7 @@ def main():
     logger.info(f"AUPRC: {auprc:.3f}")
     logger.info(f"AUROC: {roc_auc_score(y_val, y_prob):.3f}")
 
-    # Save
+    # save
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 

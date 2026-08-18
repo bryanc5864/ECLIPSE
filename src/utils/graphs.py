@@ -1,5 +1,5 @@
 """
-Graph Utilities for ECLIPSE.
+graph Utilities for ECLIPSE.
 
 Handles:
 - Hi-C contact graph construction
@@ -20,36 +20,30 @@ def build_hic_graph(
     bin_size: int = 50000,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Build graph from Hi-C contact matrix.
+    build graph from Hi-C contact matrix.
 
     Args:
         contact_matrix: Hi-C contact matrix [N, N]
         threshold: Minimum contact frequency for edge
         max_distance: Maximum genomic distance for edges (bins)
         bin_size: Size of each bin in bp
-
-    Returns:
-        Tuple of (edge_index, edge_weights, node_features)
     """
     n_bins = contact_matrix.shape[0]
 
-    # Apply threshold
+    # apply threshold
     edges_i, edges_j = np.where(contact_matrix > threshold)
 
-    # Filter by distance if specified
+    # filter by distance if specified
     if max_distance is not None:
         max_bins = max_distance // bin_size
         distance_mask = np.abs(edges_i - edges_j) <= max_bins
         edges_i = edges_i[distance_mask]
         edges_j = edges_j[distance_mask]
 
-    # Edge index
     edge_index = np.stack([edges_i, edges_j], axis=0)
 
-    # Edge weights
     edge_weights = contact_matrix[edges_i, edges_j]
 
-    # Node features
     node_features = compute_graph_features(contact_matrix)
 
     return edge_index, edge_weights, node_features
@@ -60,11 +54,7 @@ def compute_graph_features(
     feature_types: Optional[List[str]] = None,
 ) -> np.ndarray:
     """
-    Compute node features from contact matrix.
-
-    Args:
-        contact_matrix: Hi-C contact matrix
-        feature_types: Types of features to compute
+    compute node features from contact matrix.
 
     Returns:
         Node features [N, F]
@@ -79,12 +69,12 @@ def compute_graph_features(
     features = []
 
     if "degree" in feature_types:
-        # Weighted degree
+        # weighted degree
         degree = contact_matrix.sum(axis=1)
         features.append(degree.reshape(-1, 1))
 
     if "local_density" in feature_types:
-        # Local contact density
+        # local contact density
         window = 5
         local_density = np.zeros(n_bins)
         for i in range(n_bins):
@@ -94,17 +84,15 @@ def compute_graph_features(
         features.append(local_density.reshape(-1, 1))
 
     if "insulation" in feature_types:
-        # Insulation score (TAD boundary detection)
+        # insulation score (TAD boundary detection)
         insulation = compute_insulation_score(contact_matrix)
         features.append(insulation.reshape(-1, 1))
 
     if "compartment" in feature_types:
-        # A/B compartment score
         compartment = compute_compartment_score(contact_matrix)
         features.append(compartment.reshape(-1, 1))
 
     if "position" in feature_types:
-        # Positional encoding
         position = positional_encoding(n_bins, 8)
         features.append(position)
 
@@ -116,11 +104,7 @@ def compute_insulation_score(
     window: int = 10,
 ) -> np.ndarray:
     """
-    Compute insulation score for TAD boundary detection.
-
-    Args:
-        contact_matrix: Hi-C contact matrix
-        window: Window size for insulation calculation
+    compute insulation score for TAD boundary detection.
 
     Returns:
         Insulation scores [N]
@@ -129,14 +113,14 @@ def compute_insulation_score(
     insulation = np.zeros(n)
 
     for i in range(window, n - window):
-        # Contacts within upstream window
+        # contacts within upstream window
         upstream = contact_matrix[i-window:i, i-window:i].mean()
-        # Contacts within downstream window
+        # contacts within downstream window
         downstream = contact_matrix[i:i+window, i:i+window].mean()
-        # Contacts across the boundary
+        # contacts across the boundary
         cross = contact_matrix[i-window:i, i:i+window].mean()
 
-        # Insulation score
+        # insulation score
         insulation[i] = cross / (0.5 * (upstream + downstream) + 1e-10)
 
     return insulation
@@ -146,17 +130,14 @@ def compute_compartment_score(
     contact_matrix: np.ndarray,
 ) -> np.ndarray:
     """
-    Compute A/B compartment score using correlation analysis.
-
-    Args:
-        contact_matrix: Hi-C contact matrix
+    compute A/B compartment score using correlation analysis.
 
     Returns:
         Compartment scores [N] (positive = A, negative = B)
     """
     n = contact_matrix.shape[0]
 
-    # Compute observed/expected matrix
+    # compute observed/expected matrix
     expected = np.zeros_like(contact_matrix)
     for d in range(n):
         diag_vals = np.diagonal(contact_matrix, d)
@@ -167,13 +148,13 @@ def compute_compartment_score(
 
     oe = contact_matrix / (expected + 1e-10)
 
-    # Compute correlation matrix
+    # compute correlation matrix
     oe_centered = oe - oe.mean(axis=1, keepdims=True)
     norms = np.sqrt((oe_centered ** 2).sum(axis=1, keepdims=True))
     oe_normalized = oe_centered / (norms + 1e-10)
     correlation = oe_normalized @ oe_normalized.T
 
-    # First eigenvector gives compartment
+    # first eigenvector gives compartment
     try:
         eigenvalues, eigenvectors = np.linalg.eigh(correlation)
         compartment = eigenvectors[:, -1]
@@ -187,16 +168,7 @@ def positional_encoding(
     n_positions: int,
     d_model: int,
 ) -> np.ndarray:
-    """
-    Sinusoidal positional encoding.
-
-    Args:
-        n_positions: Number of positions
-        d_model: Encoding dimension
-
-    Returns:
-        Positional encoding [n_positions, d_model]
-    """
+    """sinusoidal positional encoding."""
     position = np.arange(n_positions).reshape(-1, 1)
     div_term = np.exp(np.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
 
@@ -211,23 +183,14 @@ def normalize_adjacency(
     adj: np.ndarray,
     method: str = "symmetric",
 ) -> np.ndarray:
-    """
-    Normalize adjacency matrix.
-
-    Args:
-        adj: Adjacency matrix
-        method: Normalization method ("symmetric", "random_walk", "none")
-
-    Returns:
-        Normalized adjacency matrix
-    """
+    """normalize adjacency matrix."""
     if method == "none":
         return adj
 
-    # Add self-loops
+    # add self-loops
     adj = adj + np.eye(adj.shape[0])
 
-    # Degree matrix
+    # degree matrix
     degree = adj.sum(axis=1)
     degree_inv_sqrt = np.power(degree, -0.5)
     degree_inv_sqrt[np.isinf(degree_inv_sqrt)] = 0
@@ -252,7 +215,7 @@ def torch_sparse_to_edge_index(
     threshold: float = 0.0,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Convert dense adjacency to sparse edge index format.
+    convert dense adjacency to sparse edge index format.
 
     Args:
         adj: Dense adjacency matrix [N, N]
@@ -272,16 +235,7 @@ def compute_graph_laplacian(
     adj: np.ndarray,
     normalized: bool = True,
 ) -> np.ndarray:
-    """
-    Compute graph Laplacian.
-
-    Args:
-        adj: Adjacency matrix
-        normalized: Whether to compute normalized Laplacian
-
-    Returns:
-        Laplacian matrix
-    """
+    """compute graph Laplacian."""
     degree = adj.sum(axis=1)
 
     if normalized:

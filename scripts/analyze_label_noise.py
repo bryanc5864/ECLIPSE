@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-Label noise sensitivity analysis.
+label noise sensitivity analysis.
 
 839/1383 training samples have NO ecDNA label (NaN) but are treated as negative.
-This script analyzes: what does the current model predict for these unlabeled samples?
-Are any predicted as ecDNA+? How does this affect metrics?
+check what the model predicts for the unlabeled pool and whether it moves the metrics.
 
 Usage:
     python scripts/analyze_label_noise.py
@@ -25,15 +24,14 @@ logger = logging.getLogger(__name__)
 def main():
     data_dir = Path("data")
 
-    # Load CytoCellDB with full labels
+    # load CytoCellDB with full labels
     cyto = pd.read_excel(data_dir / "cytocell_db" / "CytoCellDB_Supp_File1.xlsx")
     cyto = cyto.dropna(subset=["DepMap_ID"])
 
-    # Load features
     train_data = np.load(data_dir / "features" / "module1_features_train.npz", allow_pickle=True)
     val_data = np.load(data_dir / "features" / "module1_features_val.npz", allow_pickle=True)
 
-    # Combine
+    # combine
     all_ids = np.concatenate([train_data["sample_ids"], val_data["sample_ids"]])
     all_labels = np.concatenate([train_data["labels"], val_data["labels"]])
     all_seq = np.concatenate([train_data["sequence_features"], val_data["sequence_features"]])
@@ -41,7 +39,7 @@ def main():
     all_frag = np.concatenate([train_data["fragile_site_features"], val_data["fragile_site_features"]])
     all_cn = np.concatenate([train_data["copy_number_features"], val_data["copy_number_features"]])
 
-    # Map to CytoCellDB labels
+    # map to CytoCellDB labels
     cyto_labels = dict(zip(cyto["DepMap_ID"], cyto["ECDNA"]))
     label_status = np.array([cyto_labels.get(sid, "unknown") for sid in all_ids])
 
@@ -56,7 +54,7 @@ def main():
     logger.info(f"  P (Possible): {labeled_p.sum()}")
     logger.info(f"  Unlabeled (NaN): {unlabeled.sum()}")
 
-    # Load model and predict on ALL samples
+    # predict on every sample, labeled or not
     from src.models import ECDNAFormer
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -76,7 +74,7 @@ def main():
     model.to(device)
     model.eval()
 
-    # Predict in batches
+    # predict in batches
     predictions = []
     batch_size = 64
     for i in range(0, len(all_ids), batch_size):
@@ -92,7 +90,7 @@ def main():
 
     predictions = np.array(predictions)
 
-    # Analysis by label group
+    # analysis by label group
     logger.info(f"\n{'='*60}")
     logger.info("PREDICTIONS BY LABEL GROUP")
     logger.info(f"{'='*60}")
@@ -115,17 +113,16 @@ def main():
     logger.info("AUROC COMPARISON: Labeled-only vs All samples")
     logger.info(f"{'='*60}")
 
-    # Current: Y=1, everything else=0
+    # current: Y=1, everything else=0
     auroc_all = roc_auc_score(all_labels, predictions)
     logger.info(f"  AUROC (all {len(all_labels)} samples): {auroc_all:.3f}")
 
-    # Labeled only: Y=1, N=0, exclude P and unlabeled
+    # labeled only: Y=1, N=0, exclude P and unlabeled
     labeled_mask = labeled_y | labeled_n
     if labeled_mask.sum() > 0 and labeled_y.sum() > 0:
         auroc_labeled = roc_auc_score(all_labels[labeled_mask], predictions[labeled_mask])
         logger.info(f"  AUROC (Y+N only, {labeled_mask.sum()} samples): {auroc_labeled:.3f}")
 
-    # Labeled + P: Y+P=1, N=0
     labeled_p_mask = labeled_y | labeled_n | labeled_p
     labels_with_p = np.zeros(len(all_labels))
     labels_with_p[labeled_y] = 1
@@ -134,7 +131,7 @@ def main():
         auroc_with_p = roc_auc_score(labels_with_p[labeled_p_mask], predictions[labeled_p_mask])
         logger.info(f"  AUROC (Y+P as pos, N as neg, {labeled_p_mask.sum()} samples): {auroc_with_p:.3f}")
 
-    # Unlabeled samples that model predicts as ecDNA+
+    # unlabeled samples that model predicts as ecDNA+
     logger.info(f"\n{'='*60}")
     logger.info("POTENTIALLY MISLABELED SAMPLES")
     logger.info(f"{'='*60}")
@@ -157,7 +154,7 @@ def main():
             lineage_str = lineage[0] if len(lineage) > 0 else "unknown"
             logger.info(f"    {sid}: pred={predictions[idx]:.3f}, lineage={lineage_str}")
 
-    # Save detailed results
+    # save detailed results
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 

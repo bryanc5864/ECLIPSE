@@ -1,5 +1,5 @@
 """
-Evaluation Metrics for ECLIPSE.
+evaluation Metrics for ECLIPSE.
 
 Provides:
 - Classification metrics (AUROC, AUPRC, F1)
@@ -23,20 +23,11 @@ def compute_auroc(
     y_true: Union[np.ndarray, torch.Tensor],
     y_pred: Union[np.ndarray, torch.Tensor],
 ) -> float:
-    """
-    Compute Area Under ROC Curve.
-
-    Args:
-        y_true: True binary labels
-        y_pred: Predicted probabilities
-
-    Returns:
-        AUROC score
-    """
+    """compute Area Under ROC Curve."""
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
 
-    # Handle edge cases
+    # handle edge cases
     if len(np.unique(y_true)) < 2:
         return 0.5
 
@@ -48,16 +39,9 @@ def compute_auprc(
     y_pred: Union[np.ndarray, torch.Tensor],
 ) -> float:
     """
-    Compute Area Under Precision-Recall Curve.
+    compute Area Under Precision-Recall Curve.
 
     More informative than AUROC for imbalanced data like ecDNA prediction.
-
-    Args:
-        y_true: True binary labels
-        y_pred: Predicted probabilities
-
-    Returns:
-        AUPRC score
     """
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
@@ -74,17 +58,9 @@ def compute_calibration_error(
     n_bins: int = 10,
 ) -> Tuple[float, np.ndarray, np.ndarray]:
     """
-    Compute Expected Calibration Error.
+    compute Expected Calibration Error.
 
     Measures how well predicted probabilities match observed frequencies.
-
-    Args:
-        y_true: True binary labels
-        y_pred: Predicted probabilities
-        n_bins: Number of calibration bins
-
-    Returns:
-        Tuple of (ECE, bin_accuracies, bin_confidences)
     """
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
@@ -130,7 +106,7 @@ def compute_f1_multilabel(
     average: str = "macro",
 ) -> float:
     """
-    Compute F1 score for multi-label classification.
+    compute F1 score for multi-label classification.
 
     Used for oncogene prediction in ecDNA-Former.
 
@@ -139,9 +115,6 @@ def compute_f1_multilabel(
         y_pred: Predicted probabilities [N, num_labels]
         threshold: Threshold for positive prediction
         average: Averaging method ("macro", "micro", "weighted")
-
-    Returns:
-        F1 score
     """
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
@@ -182,17 +155,7 @@ def compute_all_metrics(
     y_pred: Union[np.ndarray, torch.Tensor],
     threshold: float = 0.5,
 ) -> EvaluationMetrics:
-    """
-    Compute all evaluation metrics.
-
-    Args:
-        y_true: True labels
-        y_pred: Predicted probabilities
-        threshold: Classification threshold
-
-    Returns:
-        EvaluationMetrics object
-    """
+    """compute all evaluation metrics."""
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
 
@@ -225,15 +188,12 @@ def compute_dynamics_metrics(
     mask: Optional[Union[np.ndarray, torch.Tensor]] = None,
 ) -> Dict[str, float]:
     """
-    Compute metrics for dynamics prediction (CircularODE).
+    compute metrics for dynamics prediction (CircularODE).
 
     Args:
         y_true: True trajectories [batch, time]
         y_pred: Predicted trajectories [batch, time]
         mask: Mask for valid time points
-
-    Returns:
-        Dictionary of metrics
     """
     y_true = _to_numpy(y_true)
     y_pred = _to_numpy(y_pred)
@@ -257,7 +217,7 @@ def compute_dynamics_metrics(
     log_pred = np.log1p(np.maximum(y_pred_flat, 0))
     metrics["log_mse"] = mean_squared_error(log_true, log_pred)
 
-    # Correlation
+    # correlation
     if len(y_true_flat) > 1:
         correlation = np.corrcoef(y_true_flat, y_pred_flat)[0, 1]
         metrics["correlation"] = correlation if not np.isnan(correlation) else 0.0
@@ -272,20 +232,10 @@ def compute_causal_metrics(
     true_effects: Optional[Dict[str, float]] = None,
     top_k: int = 20,
 ) -> Dict[str, float]:
-    """
-    Compute metrics for causal effect estimation (VulnCausal).
-
-    Args:
-        estimated_effects: Estimated causal effects per gene
-        true_effects: True causal effects (if available from validation)
-        top_k: Number of top genes to evaluate
-
-    Returns:
-        Dictionary of metrics
-    """
+    """compute metrics for causal effect estimation (VulnCausal)."""
     metrics = {}
 
-    # Sort genes by estimated effect
+    # sort genes by estimated effect
     sorted_genes = sorted(
         estimated_effects.items(),
         key=lambda x: abs(x[1]),
@@ -299,7 +249,7 @@ def compute_causal_metrics(
     metrics["top_k_mean_effect"] = np.mean(np.abs(top_effects))
     metrics["top_k_max_effect"] = np.max(np.abs(top_effects))
 
-    # If true effects available, compute overlap
+    # if true effects available, compute overlap
     if true_effects is not None:
         sorted_true = sorted(
             true_effects.items(),
@@ -313,7 +263,7 @@ def compute_causal_metrics(
         metrics["precision_at_k"] = overlap / top_k
         metrics["recall_at_k"] = overlap / len(true_top_genes) if true_top_genes else 0
 
-        # Effect correlation for matched genes
+        # effect correlation for matched genes
         common_genes = set(estimated_effects.keys()) & set(true_effects.keys())
         if common_genes:
             est_vals = [estimated_effects[g] for g in common_genes]

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Feature correlation analysis for ecDNA-Former.
+feature correlation analysis for ecDNA-Former.
 
 Analyzes:
-1. Feature-label correlations (point-biserial)
-2. Inter-feature correlations (identify redundancy)
-3. Top discriminative features by effect size
+- feature-label correlations (point-biserial)
+- inter-feature correlations (identify redundancy)
+- top discriminative features by effect size
 
 Usage:
     python scripts/analyze_feature_correlation.py
@@ -25,16 +25,15 @@ logger = logging.getLogger(__name__)
 def main():
     data_dir = Path("data")
 
-    # Load features
     train_data = np.load(data_dir / "features" / "module1_features_train.npz", allow_pickle=True)
     val_data = np.load(data_dir / "features" / "module1_features_val.npz", allow_pickle=True)
 
     feature_names = list(train_data["feature_names"])
 
-    # Combine train + val for full analysis
+    # combine train + val for full analysis
     all_labels = np.concatenate([train_data["labels"], val_data["labels"]])
 
-    # Reconstruct raw feature matrix from the packed arrays
+    # reconstruct raw feature matrix from the packed arrays
     # sequence_features has raw features in first N positions
     all_seq = np.concatenate([train_data["sequence_features"], val_data["sequence_features"]])
     n_features = len(feature_names)
@@ -42,7 +41,7 @@ def main():
 
     logger.info(f"Samples: {len(all_labels)}, Features: {n_features}, ecDNA+: {int(all_labels.sum())}")
 
-    # 1. Feature-label correlations (point-biserial)
+    # feature-label correlations (point-biserial)
     logger.info(f"\n{'='*60}")
     logger.info("FEATURE-LABEL CORRELATIONS (point-biserial)")
     logger.info(f"{'='*60}")
@@ -65,7 +64,7 @@ def main():
         sig = "***" if row["p_value"] < 0.001 else "**" if row["p_value"] < 0.01 else "*" if row["p_value"] < 0.05 else ""
         logger.info(f"{row['feature']:>40s} {row['correlation']:>+8.4f} {row['p_value']:>12.2e} {sig}")
 
-    # 2. Effect sizes (Cohen's d between ecDNA+ and ecDNA-)
+    # effect sizes (Cohen's d between ecDNA+ and ecDNA-)
     logger.info(f"\n{'='*60}")
     logger.info("EFFECT SIZES (Cohen's d)")
     logger.info(f"{'='*60}")
@@ -98,7 +97,7 @@ def main():
     for _, row in effect_df.head(20).iterrows():
         logger.info(f"{row['feature']:>40s} {row['cohens_d']:>+8.3f} {row['mean_pos']:>10.3f} {row['mean_neg']:>10.3f}")
 
-    # 3. Inter-feature correlations (find highly correlated pairs)
+    # Inter-feature correlations (find highly correlated pairs)
     logger.info(f"\n{'='*60}")
     logger.info("HIGHLY CORRELATED FEATURE PAIRS (|r| > 0.8)")
     logger.info(f"{'='*60}")
@@ -123,7 +122,6 @@ def main():
     else:
         logger.info("  No pairs with |r| > 0.8")
 
-    # Save results
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 

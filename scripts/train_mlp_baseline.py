@@ -33,15 +33,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Import reusable bootstrap function from compute_significance.py
-# ---------------------------------------------------------------------------
+# import reusable bootstrap function from compute_significance.py
 from scripts.compute_significance import bootstrap_auroc_diff
 
 
-# ---------------------------------------------------------------------------
-# MLP Model
-# ---------------------------------------------------------------------------
+# MLP model
 class MLPBaseline(nn.Module):
     """Simple MLP baseline: 112 -> 256 -> 128 -> 1."""
 
@@ -63,9 +59,6 @@ class MLPBaseline(nn.Module):
         return self.net(x)
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def load_full_features(data_dir: Path):
     """Load train + val features and labels, returning flat 112-dim matrix."""
     train = np.load(data_dir / "features" / "module1_features_train.npz", allow_pickle=True)
@@ -74,7 +67,7 @@ def load_full_features(data_dir: Path):
     feature_names = list(train["feature_names"])
     n_features = len(feature_names)
 
-    # Flat feature matrix: first n_features columns of sequence_features
+    # flat feature matrix: first n_features columns of sequence_features
     X_train = train["sequence_features"][:, :n_features]
     X_val = val["sequence_features"][:, :n_features]
 
@@ -90,7 +83,7 @@ def train_mlp_fold(X_train, y_train, X_val, y_val, args, device):
     """Train one MLP fold and return validation predictions."""
     n_features = X_train.shape[1]
 
-    # Class weights for BCE
+    # class weights for BCE
     pos_count = y_train.sum()
     neg_count = len(y_train) - pos_count
     pos_weight = torch.tensor([neg_count / max(pos_count, 1)], device=device)
@@ -123,7 +116,7 @@ def train_mlp_fold(X_train, y_train, X_val, y_val, args, device):
             optimizer.step()
         scheduler.step()
 
-        # Validate
+        # validate
         model.eval()
         with torch.no_grad():
             logits = model(X_val_t).squeeze(-1)
@@ -161,9 +154,6 @@ def train_rf_fold(X_train, y_train, X_val, y_val):
     return probs, auroc
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="MLP baseline for ecDNA-Former")
     parser.add_argument("--data-dir", type=str, default="data")
@@ -187,7 +177,7 @@ def main():
     mlp_results = []
     rf_results = []
 
-    # Collect all out-of-fold predictions for bootstrap comparison
+    # collect all out-of-fold predictions for bootstrap comparison
     mlp_oof_probs = np.zeros(len(y))
     rf_oof_probs = np.zeros(len(y))
 
@@ -202,7 +192,6 @@ def main():
         logger.info(f"  Train: {len(y_train)} ({int(y_train.sum())} ecDNA+), "
                      f"Val: {len(y_val)} ({int(y_val.sum())} ecDNA+)")
 
-        # MLP
         mlp_probs, mlp_auroc = train_mlp_fold(X_train, y_train, X_val, y_val, args, device)
         mlp_auprc = average_precision_score(y_val, mlp_probs) if len(np.unique(y_val)) >= 2 else 0.0
         mlp_f1 = f1_score(y_val, (mlp_probs > 0.5).astype(int), zero_division=0)
@@ -226,7 +215,6 @@ def main():
         })
         logger.info(f"  RF   AUROC={rf_auroc:.3f}, AUPRC={rf_auprc:.3f}")
 
-    # ---------- Summary ----------
     all_results = mlp_results + rf_results
     results_df = pd.DataFrame(all_results)
 
@@ -243,7 +231,6 @@ def main():
             vals = subset[metric]
             logger.info(f"  {model_name:4s} {metric}: {vals.mean():.3f} +/- {vals.std():.3f}")
 
-    # ---------- Bootstrap comparison (OOF predictions) ----------
     logger.info(f"\n{'='*60}")
     logger.info("BOOTSTRAP AUROC COMPARISONS (out-of-fold)")
     logger.info(f"{'='*60}")

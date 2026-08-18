@@ -1,6 +1,5 @@
 """
-ECLIPSE: Extrachromosomal Circular DNA Learning for Integrated
-Prediction of Synthetic-lethality and Expression
+ECLIPSE: Extrachromosomal Circular DNA Learning for Integrated Prediction of Synthetic-lethality and Expression
 
 A computational framework for:
 - Module 1 (ecDNA-Former): Predicting ecDNA formation from genomic context

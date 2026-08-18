@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Compute null baseline for vulnerability validation rate.
+compute null baseline for vulnerability validation rate.
 
 Samples random gene sets of size k from DepMap CRISPR genes,
 checks how many match the same literature validation criteria,
 and computes a null distribution to compare against our 14/47 = 29.8%.
-
 Also computes Wilson confidence intervals on the observed rate.
 
 Usage:
@@ -21,7 +20,7 @@ from scipy import stats
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Categories of validated genes and their biological basis
+# categories of validated genes and their biological basis
 # A gene "validates" if it belongs to one of these well-known ecDNA-relevant pathways
 # AND is a general cancer dependency (CRISPR essential in many lines)
 VALIDATION_CATEGORIES = {
@@ -81,7 +80,7 @@ VALIDATION_CATEGORIES = {
     },
 }
 
-# All validation genes (union of all categories)
+# all validation genes (union of all categories)
 ALL_VALIDATION_GENES = set()
 for cat in VALIDATION_CATEGORIES.values():
     ALL_VALIDATION_GENES |= cat["genes"]
@@ -100,14 +99,14 @@ def wilson_ci(k, n, confidence=0.95):
 def main():
     data_dir = Path("data")
 
-    # Load the full gene list from differential dependency analysis
+    # load the full gene list from differential dependency analysis
     dep_file = data_dir / "vulnerabilities" / "differential_dependency_full.csv"
     if dep_file.exists():
         dep_df = pd.read_csv(dep_file)
         all_genes = set(dep_df.iloc[:, 0].unique())
         logger.info(f"Total genes in dependency analysis: {len(all_genes)}")
     else:
-        # Fallback: use DepMap CRISPR gene list
+        # fallback: use DepMap CRISPR gene list
         crispr_file = data_dir / "depmap" / "crispr_gene_effect.csv"
         if crispr_file.exists():
             crispr = pd.read_csv(crispr_file, index_col=0, nrows=0)
@@ -117,28 +116,28 @@ def main():
             logger.error("No gene list found. Need differential_dependency_full.csv or crispr_gene_effect.csv")
             return
 
-    # Our validated genes
+    # our validated genes
     our_validated = {"CHK1", "CDK1", "KIF11", "NCAPD2", "SGO1", "NDC80",
                      "ORC6", "MCM2", "PSMD7", "RPL23", "URI1", "SNRPF",
                      "DDX3X", "BCL2L1"}
-    our_candidates = 47  # Total candidates we reported
+    our_candidates = 47  # total candidates we reported
     our_validated_count = len(our_validated)
 
     logger.info(f"\nOur result: {our_validated_count}/{our_candidates} = "
                 f"{our_validated_count/our_candidates:.1%}")
 
-    # Wilson CI on our observed rate
+    # wilson CI on our observed rate
     ci_low, ci_high = wilson_ci(our_validated_count, our_candidates)
     logger.info(f"Wilson 95% CI: [{ci_low:.1%}, {ci_high:.1%}]")
 
-    # Count how many genes in the full gene list overlap with validation categories
+    # count how many genes in the full gene list overlap with validation categories
     overlap = all_genes & ALL_VALIDATION_GENES
     logger.info(f"\nGenes in both gene list and validation categories: {len(overlap)}")
     logger.info(f"Validation gene pool: {len(ALL_VALIDATION_GENES)}")
     logger.info(f"Background rate: {len(overlap)}/{len(all_genes)} = "
                 f"{len(overlap)/len(all_genes):.1%}")
 
-    # Null distribution: sample random gene sets of size 47
+    # null distribution: sample random gene sets of size 47
     n_simulations = 100_000
     gene_list = sorted(all_genes)
     n_genes = len(gene_list)
@@ -169,7 +168,6 @@ def main():
     logger.info(f"P-value (observed >= null): {p_value:.4f}")
     logger.info(f"Enrichment: {(our_validated_count/our_candidates) / max(null_rate.mean(), 1e-6):.1f}x")
 
-    # Save results
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
 
@@ -191,7 +189,7 @@ def main():
 
     pd.DataFrame([results]).to_csv(output_dir / "null_baseline_results.csv", index=False)
 
-    # Also save the null distribution
+    # also save the null distribution
     pd.DataFrame({"null_count": null_counts}).to_csv(
         output_dir / "null_distribution.csv", index=False
     )

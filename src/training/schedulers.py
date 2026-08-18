@@ -1,5 +1,5 @@
 """
-Learning Rate Schedulers for ECLIPSE.
+learning Rate Schedulers for ECLIPSE.
 
 Provides:
 - WarmupCosineScheduler: Cosine annealing with warmup
@@ -14,7 +14,7 @@ from typing import List
 
 class WarmupCosineScheduler(_LRScheduler):
     """
-    Cosine annealing schedule with linear warmup.
+    cosine annealing schedule with linear warmup.
 
     Learning rate increases linearly during warmup, then decreases
     following a cosine curve.
@@ -28,16 +28,6 @@ class WarmupCosineScheduler(_LRScheduler):
         min_lr: float = 1e-7,
         last_epoch: int = -1,
     ):
-        """
-        Initialize scheduler.
-
-        Args:
-            optimizer: Optimizer to schedule
-            warmup_steps: Number of warmup steps
-            total_steps: Total training steps
-            min_lr: Minimum learning rate
-            last_epoch: Last epoch (for resuming)
-        """
         self.warmup_steps = warmup_steps
         self.total_steps = total_steps
         self.min_lr = min_lr
@@ -46,11 +36,11 @@ class WarmupCosineScheduler(_LRScheduler):
     def get_lr(self) -> List[float]:
         """Get learning rates for all param groups."""
         if self.last_epoch < self.warmup_steps:
-            # Linear warmup
+            # linear warmup
             warmup_factor = self.last_epoch / max(1, self.warmup_steps)
             return [base_lr * warmup_factor for base_lr in self.base_lrs]
         else:
-            # Cosine annealing
+            # cosine annealing
             progress = (self.last_epoch - self.warmup_steps) / max(
                 1, self.total_steps - self.warmup_steps
             )
@@ -63,7 +53,7 @@ class WarmupCosineScheduler(_LRScheduler):
 
 class LinearWarmupScheduler(_LRScheduler):
     """
-    Linear warmup followed by constant learning rate.
+    linear warmup followed by constant learning rate.
 
     Useful for fine-tuning or when cosine decay isn't needed.
     """
@@ -74,14 +64,6 @@ class LinearWarmupScheduler(_LRScheduler):
         warmup_steps: int,
         last_epoch: int = -1,
     ):
-        """
-        Initialize scheduler.
-
-        Args:
-            optimizer: Optimizer to schedule
-            warmup_steps: Number of warmup steps
-            last_epoch: Last epoch (for resuming)
-        """
         self.warmup_steps = warmup_steps
         super().__init__(optimizer, last_epoch)
 
@@ -95,7 +77,7 @@ class LinearWarmupScheduler(_LRScheduler):
 
 class CyclicWarmupScheduler(_LRScheduler):
     """
-    Cyclic learning rate with warmup at the start of each cycle.
+    cyclic learning rate with warmup at the start of each cycle.
 
     Good for training dynamics models where different phases
     may benefit from learning rate restarts.
@@ -109,16 +91,6 @@ class CyclicWarmupScheduler(_LRScheduler):
         min_lr_factor: float = 0.1,
         last_epoch: int = -1,
     ):
-        """
-        Initialize scheduler.
-
-        Args:
-            optimizer: Optimizer to schedule
-            cycle_length: Steps per cycle
-            warmup_fraction: Fraction of cycle for warmup
-            min_lr_factor: Minimum LR as fraction of base
-            last_epoch: Last epoch (for resuming)
-        """
         self.cycle_length = cycle_length
         self.warmup_steps = int(cycle_length * warmup_fraction)
         self.min_lr_factor = min_lr_factor
@@ -129,10 +101,10 @@ class CyclicWarmupScheduler(_LRScheduler):
         cycle_position = self.last_epoch % self.cycle_length
 
         if cycle_position < self.warmup_steps:
-            # Warmup phase
+            # warmup phase
             factor = cycle_position / max(1, self.warmup_steps)
         else:
-            # Cosine decay within cycle
+            # cosine decay within cycle
             progress = (cycle_position - self.warmup_steps) / max(
                 1, self.cycle_length - self.warmup_steps
             )
@@ -148,17 +120,7 @@ def get_scheduler(
     optimizer: torch.optim.Optimizer,
     **kwargs
 ) -> _LRScheduler:
-    """
-    Get scheduler by name.
-
-    Args:
-        name: Scheduler name
-        optimizer: Optimizer to schedule
-        **kwargs: Scheduler-specific arguments
-
-    Returns:
-        Learning rate scheduler
-    """
+    """get scheduler by name."""
     schedulers = {
         "warmup_cosine": WarmupCosineScheduler,
         "linear_warmup": LinearWarmupScheduler,

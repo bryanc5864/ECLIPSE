@@ -4,7 +4,6 @@ Leave-one-lineage-out cross-validation for ecDNA-Former (Module 1).
 
 Holds out each cancer lineage, trains on remaining lineages, evaluates
 on held-out lineage. Tests whether the model generalizes across tissue types.
-
 Saves results to data/validation/lineage_loocv_results.csv.
 
 Usage:
@@ -77,7 +76,7 @@ def train_and_evaluate(lineage_name, fold_data_dir, checkpoint_dir, epochs, pati
 
     n_val_pos = int(val_dataset.labels.sum()) if hasattr(val_dataset, 'labels') else -1
 
-    # Skip if val set has 0 positives (can't compute AUROC)
+    # skip if val set has 0 positives (can't compute AUROC)
     if n_val_pos == 0:
         logger.warning(f"  Lineage {lineage_name}: 0 ecDNA+ in held-out set, skipping training")
         return {
@@ -104,7 +103,7 @@ def train_and_evaluate(lineage_name, fold_data_dir, checkpoint_dir, epochs, pati
 
     trainer.train(num_epochs=epochs, early_stopping_patience=patience)
 
-    # Extract best metrics
+    # extract best metrics
     log_dir = fold_ckpt / "logs"
     val_logs = sorted(log_dir.glob("validation_log_*.csv"))
     if val_logs:
@@ -144,7 +143,7 @@ def main():
     data_dir = Path(args.data_dir)
     features_dir = data_dir / "features"
 
-    # Load data and lineage info
+    # load data and lineage info
     combined = load_full_dataset(data_dir)
     lineage_map = load_lineage_info(data_dir)
 
@@ -152,7 +151,7 @@ def main():
     labels = combined["labels"]
     lineages = np.array([lineage_map.get(sid, "unknown") for sid in sample_ids])
 
-    # Find eligible lineages
+    # find eligible lineages
     lineage_stats = []
     for lin in sorted(set(lineages)):
         mask = lineages == lin
@@ -172,13 +171,13 @@ def main():
     logger.info(f"\nEligible lineages (>={args.min_samples} samples, >={args.min_positives} ecDNA+): "
                 f"{len(eligible)}")
 
-    # Use a temp directory for fold data to avoid overwriting originals
+    # use a temp directory for fold data to avoid overwriting originals
     import tempfile
     import os
     fold_data_dir = Path(tempfile.mkdtemp(prefix="eclipse_lineage_"))
     fold_features_dir = fold_data_dir / "features"
     fold_features_dir.mkdir(parents=True, exist_ok=True)
-    # Symlink required subdirectories so ECDNADataset.from_data_dir works
+    # symlink required subdirectories so ECDNADataset.from_data_dir works
     for subdir in ["ecdna_labels", "cytocell_db", "depmap", "hic", "supplementary"]:
         src = data_dir / subdir
         if src.exists():
@@ -195,14 +194,14 @@ def main():
                         f"{int(row['ecDNA_pos'])} ecDNA+)")
             logger.info(f"{'='*60}")
 
-            # Create train (everything else) and val (this lineage) indices
+            # create train (everything else) and val (this lineage) indices
             val_mask = lineages == lineage_name
             train_mask = ~val_mask
 
             train_idx = np.where(train_mask)[0]
             val_idx = np.where(val_mask)[0]
 
-            # Save fold NPZ to temp directory
+            # save fold NPZ to temp directory
             save_npz(combined, train_idx, fold_features_dir / "module1_features_train.npz")
             save_npz(combined, val_idx, fold_features_dir / "module1_features_val.npz")
 
@@ -218,11 +217,10 @@ def main():
             logger.info(f"  AUROC: {auroc:.3f}" if not np.isnan(auroc) else "  AUROC: N/A")
 
     finally:
-        # Clean up temp directory
+        # clean up temp directory
         shutil.rmtree(fold_data_dir, ignore_errors=True)
         logger.info("\nCleaned up temp fold data directory")
 
-    # Summary
     results_df = pd.DataFrame(all_results)
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)

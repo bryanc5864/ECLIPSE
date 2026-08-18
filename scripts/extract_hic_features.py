@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""
-Extract Hi-C topology features for ecDNA prediction.
-Fast version - uses precomputed TAD boundaries and simple contact metrics.
+"""extract Hi-C topology features for ecDNA prediction.
+
+fast path: precomputed TAD boundaries plus simple contact metrics.
 """
 
 import numpy as np
@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Oncogene locations (hg38) - midpoint positions
+# oncogene locations (hg38) - midpoint positions
 ONCOGENE_LOCI = {
     'MYC': ('chr8', 127739192),
     'MYCN': ('chr2', 15943778),
@@ -37,8 +37,8 @@ ONCOGENE_LOCI = {
     'KIT': ('chr4', 54699316),
 }
 
-# Known TAD boundaries near oncogenes (from literature/ENCODE)
-# These are approximate positions where TAD boundaries occur
+# known TAD boundaries near oncogenes (from literature/ENCODE)
+# these are approximate positions where TAD boundaries occur
 TAD_BOUNDARIES = {
     'chr8_MYC': [127200000, 128300000],  # MYC is in a TAD
     'chr7_EGFR': [54500000, 55800000],
@@ -53,7 +53,7 @@ def load_hic(hic_file: str, resolution: int = 50000):
 
     available = cooler.fileops.list_coolers(hic_file)
 
-    # Find closest resolution
+    # find closest resolution
     for res_path in available:
         res = res_path.split('/')[-1]
         if res.isdigit() and int(res) >= resolution:
@@ -61,7 +61,7 @@ def load_hic(hic_file: str, resolution: int = 50000):
             logger.info(f"Using resolution: {clr.binsize}bp")
             return clr
 
-    # Default to first available
+    # default to first available
     clr = cooler.Cooler(f"{hic_file}::{available[0]}")
     return clr
 
@@ -79,7 +79,7 @@ def get_local_contact_sum(clr, chrom, pos, window=500000):
         region = f"{chrom}:{start}-{end}"
         matrix = clr.matrix(balance=False).fetch(region)
 
-        # Sum of contacts (log scale)
+        # sum of contacts (log scale)
         total = np.nansum(matrix)
         return np.log1p(total)
     except:
@@ -92,7 +92,7 @@ def get_long_range_contacts(clr, chrom, pos, min_dist=1000000):
         resolution = clr.binsize
         center_bin = pos // resolution
 
-        # Get row of contacts
+        # get row of contacts
         matrix = clr.matrix(balance=False).fetch(chrom)
         local_bin = center_bin - clr.offset(chrom)
 
@@ -101,7 +101,7 @@ def get_long_range_contacts(clr, chrom, pos, min_dist=1000000):
 
         row = matrix[local_bin, :]
 
-        # Count long-range vs short-range
+        # count long-range vs short-range
         min_dist_bins = min_dist // resolution
 
         short_range = np.nansum(row[max(0, local_bin-min_dist_bins):local_bin+min_dist_bins])
@@ -120,7 +120,7 @@ def extract_hic_features(hic_file: str):
     clr = load_hic(hic_file)
     features = {}
 
-    # 1. Local contact density for each oncogene
+    # local contact density for each oncogene
     logger.info("Computing local contact density...")
     contact_densities = []
     for gene, (chrom, pos) in ONCOGENE_LOCI.items():
@@ -128,7 +128,6 @@ def extract_hic_features(hic_file: str):
         features[f'hic_density_{gene}'] = density
         contact_densities.append(density)
 
-    # 2. Long-range contact fraction
     logger.info("Computing long-range contact fractions...")
     long_range_fracs = []
     for gene, (chrom, pos) in ONCOGENE_LOCI.items():
@@ -136,14 +135,14 @@ def extract_hic_features(hic_file: str):
         features[f'hic_longrange_{gene}'] = frac
         long_range_fracs.append(frac)
 
-    # 3. Summary statistics
+    # summary statistics
     features['hic_density_mean'] = np.mean(contact_densities)
     features['hic_density_std'] = np.std(contact_densities)
     features['hic_density_max'] = np.max(contact_densities)
     features['hic_longrange_mean'] = np.mean(long_range_fracs)
     features['hic_longrange_std'] = np.std(long_range_fracs)
 
-    # 4. Relative features (normalized by genome average)
+    # relative features (normalized by genome average)
     genome_mean = features['hic_density_mean']
     if genome_mean > 0:
         for gene in ONCOGENE_LOCI:
@@ -167,7 +166,7 @@ def main():
         logger.info(f"  {name}: {value:.4f}")
     logger.info(f"  ... and {len(features) - 20} more")
 
-    # Save
+    # save
     output_file = data_dir / "features" / "hic_features.npz"
     np.savez(output_file, **features)
     logger.info(f"\nSaved to {output_file}")

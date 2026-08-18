@@ -1,5 +1,5 @@
 """
-Fragile Site Encoder for ecDNA-Former.
+fragile Site Encoder for ecDNA-Former.
 
 Encodes proximity and features of chromosomal fragile sites,
 which are known to be associated with ecDNA formation events.
@@ -14,7 +14,7 @@ import math
 
 class FragileSiteEncoder(nn.Module):
     """
-    Encode chromosomal fragile site context for ecDNA prediction.
+    encode chromosomal fragile site context for ecDNA prediction.
 
     Fragile sites are regions prone to breakage under replication stress
     and are associated with ecDNA formation. This module encodes:
@@ -32,37 +32,27 @@ class FragileSiteEncoder(nn.Module):
         num_heads: int = 4,
         max_distance: float = 10e6,  # 10 Mb
     ):
-        """
-        Initialize fragile site encoder.
-
-        Args:
-            num_fragile_sites: Maximum number of fragile sites to consider
-            hidden_dim: Hidden dimension
-            output_dim: Output embedding dimension
-            num_heads: Number of attention heads
-            max_distance: Maximum distance to consider (bp)
-        """
         super().__init__()
 
         self.num_fragile_sites = num_fragile_sites
         self.hidden_dim = hidden_dim
         self.max_distance = max_distance
 
-        # Fragile site embeddings
+        # fragile site embeddings
         self.site_type_embedding = nn.Embedding(4, hidden_dim // 4)  # CFS, RFS, etc.
         self.chromosome_embedding = nn.Embedding(25, hidden_dim // 4)  # 1-22, X, Y, MT
 
-        # Distance encoding
+        # distance encoding
         self.distance_encoder = DistanceEncoder(hidden_dim // 2)
 
-        # Site feature projection
+        # site feature projection
         self.site_projection = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.GELU(),
         )
 
-        # Attention over fragile sites
+        # attention over fragile sites
         self.attention = nn.MultiheadAttention(
             embed_dim=hidden_dim,
             num_heads=num_heads,
@@ -70,10 +60,10 @@ class FragileSiteEncoder(nn.Module):
             batch_first=True,
         )
 
-        # Query for attention (learnable)
+        # query for attention (learnable)
         self.query = nn.Parameter(torch.randn(1, 1, hidden_dim))
 
-        # Output projection
+        # output projection
         self.output = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.GELU(),
@@ -91,7 +81,7 @@ class FragileSiteEncoder(nn.Module):
         fragile_site_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
-        Encode fragile site context.
+        encode fragile site context.
 
         Args:
             query_positions: Query genomic positions [batch, 2] (start, end)
@@ -106,54 +96,49 @@ class FragileSiteEncoder(nn.Module):
         """
         batch_size = query_positions.shape[0]
 
-        # Get query midpoint
         query_midpoint = (query_positions[:, 0] + query_positions[:, 1]) / 2  # [B]
         query_midpoint = query_midpoint.unsqueeze(1)  # [B, 1]
 
-        # Get fragile site midpoints
+        # get fragile site midpoints
         site_midpoints = (
             fragile_site_positions[:, :, 0] + fragile_site_positions[:, :, 1]
         ) / 2  # [B, S]
 
-        # Compute distances
+        # compute distances
         distances = torch.abs(site_midpoints - query_midpoint)  # [B, S]
 
-        # Same chromosome mask
+        # same chromosome mask
         same_chrom = (
             fragile_site_chromosomes == query_chromosomes.unsqueeze(1)
         ).float()
 
-        # Distance encoding
+        # distance encoding
         dist_features = self.distance_encoder(distances)  # [B, S, H/2]
 
-        # Site type embedding
         type_emb = self.site_type_embedding(fragile_site_types)  # [B, S, H/4]
 
-        # Chromosome embedding
         chrom_emb = self.chromosome_embedding(fragile_site_chromosomes)  # [B, S, H/4]
 
-        # Combine features
+        # combine features
         site_features = torch.cat([
             dist_features,
             type_emb,
             chrom_emb,
         ], dim=-1)  # [B, S, H]
 
-        # Project
         site_features = self.site_projection(site_features)
 
-        # Mask distant sites and different chromosomes
+        # mask distant sites and different chromosomes
         distance_mask = (distances < self.max_distance) & (same_chrom > 0.5)
         if fragile_site_mask is not None:
             distance_mask = distance_mask & fragile_site_mask
 
-        # Create attention mask (True = mask out)
+        # create attention mask (True = mask out)
         attn_mask = ~distance_mask
 
-        # Expand query
         query = self.query.expand(batch_size, -1, -1)  # [B, 1, H]
 
-        # Attention over fragile sites
+        # attention over fragile sites
         attended, _ = self.attention(
             query=query,
             key=site_features,
@@ -161,7 +146,7 @@ class FragileSiteEncoder(nn.Module):
             key_padding_mask=attn_mask,
         )  # [B, 1, H]
 
-        # Project to output
+        # project to output
         output = self.output(attended.squeeze(1))  # [B, output_dim]
 
         return output
@@ -169,7 +154,7 @@ class FragileSiteEncoder(nn.Module):
 
 class DistanceEncoder(nn.Module):
     """
-    Encode genomic distances with learned or fixed representations.
+    encode genomic distances with learned or fixed representations.
 
     Uses log-scaled distance bins with learned embeddings.
     """
@@ -185,28 +170,27 @@ class DistanceEncoder(nn.Module):
         self.max_distance = max_distance
         self.num_bins = num_bins
 
-        # Create log-spaced bins
+        # create log-spaced bins
         self.register_buffer(
             'bin_edges',
             torch.logspace(3, math.log10(max_distance), num_bins)
         )
 
-        # Bin embeddings
         self.bin_embedding = nn.Embedding(num_bins + 1, output_dim)
 
-        # Continuous distance encoding
+        # continuous distance encoding
         self.continuous_encoder = nn.Sequential(
             nn.Linear(1, output_dim // 2),
             nn.GELU(),
             nn.Linear(output_dim // 2, output_dim // 2),
         )
 
-        # Combination
+        # combination
         self.combine = nn.Linear(output_dim + output_dim // 2, output_dim)
 
     def forward(self, distances: torch.Tensor) -> torch.Tensor:
         """
-        Encode distances.
+        encode distances.
 
         Args:
             distances: Genomic distances [batch, seq_len]
@@ -214,28 +198,27 @@ class DistanceEncoder(nn.Module):
         Returns:
             Distance embeddings [batch, seq_len, output_dim]
         """
-        # Discretize to bins
+        # discretize to bins
         bin_indices = torch.bucketize(distances, self.bin_edges)
         bin_emb = self.bin_embedding(bin_indices)
 
-        # Continuous encoding (log-scaled)
-        log_dist = torch.log1p(distances / 1000).unsqueeze(-1)  # Scale to kb
+        # continuous encoding (log-scaled)
+        log_dist = torch.log1p(distances / 1000).unsqueeze(-1)  # scale to kb
         cont_emb = self.continuous_encoder(log_dist)
 
-        # Combine
         combined = torch.cat([bin_emb, cont_emb], dim=-1)
         return self.combine(combined)
 
 
 class FragileSiteDatabase:
     """
-    Database of chromosomal fragile sites for feature lookup.
+    database of chromosomal fragile sites for feature lookup.
 
     Provides interface to query fragile site information
     for any genomic region.
     """
 
-    # Known common fragile sites (CFS) with associated genes
+    # known common fragile sites (CFS) with associated genes
     COMMON_FRAGILE_SITES = {
         "FRA3B": {"chrom": "chr3", "start": 60400000, "end": 63000000, "gene": "FHIT"},
         "FRA16D": {"chrom": "chr16", "start": 78400000, "end": 79000000, "gene": "WWOX"},
@@ -249,20 +232,19 @@ class FragileSiteDatabase:
         "FRA9E": {"chrom": "chr9", "start": 117000000, "end": 118000000, "gene": ""},
     }
 
-    # Site type mapping
+    # site type mapping
     SITE_TYPES = {
-        "CFS": 0,  # Common fragile site
-        "RFS": 1,  # Rare fragile site
-        "ERFS": 2,  # Early replicating fragile site
+        "CFS": 0,  # common fragile site
+        "RFS": 1,  # rare fragile site
+        "ERFS": 2,  # early replicating fragile site
         "unknown": 3,
     }
 
-    # Chromosome mapping
+    # chromosome mapping
     CHROM_TO_IDX = {f"chr{i}": i for i in range(1, 23)}
     CHROM_TO_IDX.update({"chrX": 23, "chrY": 24, "chrM": 0})
 
     def __init__(self, additional_sites: Optional[dict] = None):
-        """Initialize with default and optional additional sites."""
         self.sites = dict(self.COMMON_FRAGILE_SITES)
         if additional_sites:
             self.sites.update(additional_sites)
@@ -296,7 +278,7 @@ class FragileSiteDatabase:
         device: str = "cpu"
     ) -> Tuple[torch.Tensor, ...]:
         """
-        Get tensor representations for a batch of queries.
+        get tensor representations for a batch of queries.
 
         Returns tensors suitable for FragileSiteEncoder forward pass.
         """

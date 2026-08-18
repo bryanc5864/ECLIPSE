@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-External Validation of Module 1 (ecDNA-Former).
+external Validation of Module 1 (ecDNA-Former).
 
 Two validation approaches:
-1. Validation set - run trained model on validation CytoCellDB samples
-2. Cross-source validation - compare CytoCellDB FISH labels vs Kim et al. 2020 AA labels
-
+- validation set - run trained model on validation CytoCellDB samples
+- cross-source validation - compare CytoCellDB FISH labels vs Kim et al. 2020 AA labels
 Data sources:
 - CytoCellDB: FISH-validated ecDNA status (Fessler et al. NAR Cancer 2024)
 - Kim et al. 2020: AmpliconArchitect ecDNA calls (Nature Genetics 2020)
@@ -26,7 +25,7 @@ import sys
 import warnings
 warnings.filterwarnings('ignore')
 
-# Add project root to path
+# add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
@@ -54,7 +53,7 @@ def load_model(checkpoint_path="checkpoints/best.pt", device='cuda'):
     model = ECDNAFormer()
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
-    # Handle different checkpoint formats
+    # handle different checkpoint formats
     if isinstance(checkpoint, dict):
         if 'model_state_dict' in checkpoint:
             model.load_state_dict(checkpoint['model_state_dict'])
@@ -140,13 +139,11 @@ def validate_val_set(model, device):
     labels = data['labels']
     print(f"\nValidation set: {len(labels)} samples ({(labels==1).sum()} ecDNA+, {(labels==0).sum()} ecDNA-)")
 
-    # Run predictions
     probs = run_predictions(model, data, device)
 
-    # Metrics at default threshold
+    # metrics at default threshold
     metrics_05 = compute_metrics(labels, probs, threshold=0.5)
 
-    # Find best threshold
     best_thresh, best_f1 = find_best_threshold(labels, probs)
     metrics_best = compute_metrics(labels, probs, threshold=best_thresh)
 
@@ -172,7 +169,6 @@ def validate_val_set(model, device):
     print(f"MCC:                {metrics_best['mcc']:.3f}")
     print(f"TP={metrics_best['tp']} FP={metrics_best['fp']} TN={metrics_best['tn']} FN={metrics_best['fn']}")
 
-    # Score distribution
     print(f"\n--- Score Distribution ---")
     pos_scores = probs[labels == 1]
     neg_scores = probs[labels == 0]
@@ -191,7 +187,7 @@ def validate_cross_source(model, data, device):
     print("=" * 80)
     print("\nComparing CytoCellDB (FISH) vs Kim et al. 2020 (AmpliconArchitect)")
 
-    # Load Kim et al. 2020 FISH-validated cell lines
+    # load Kim et al. 2020 FISH-validated cell lines
     kim_path = Path("data/amplicon_repository/41588_2020_678_MOESM2_ESM.xlsx")
     if not kim_path.exists():
         print("  Kim et al. 2020 data not available, skipping")
@@ -200,12 +196,12 @@ def validate_cross_source(model, data, device):
     kim = pd.read_excel(kim_path, sheet_name='Supplementary Table 2')
     kim_ecdna = kim[kim['FinalClass'] == 'Circular']['Sample'].str.upper().tolist()
 
-    # Load CytoCellDB
+    # load CytoCellDB
     cyto = pd.read_excel('data/cytocell_db/CytoCellDB_Supp_File1.xlsx')
     cyto['name_upper'] = cyto['stripped_cell_line_name'].str.upper()
     cyto_ecdna = set(cyto[cyto['ECDNA'] == 'Y']['name_upper'].dropna())
 
-    # Find overlap
+    # find overlap
     kim_all = set(kim['Sample'].str.upper())
     cyto_all = set(cyto['name_upper'].dropna())
     overlap = kim_all & cyto_all
@@ -240,7 +236,7 @@ def validate_isogenic_pairs(model, device):
     print("\nGBM39-EC (ecDNA+) vs GBM39-HSR (chromosomal)")
     print("Source: Lange et al. Nature Genetics 2022\n")
 
-    # For isogenic pairs, we need to create feature vectors
+    # for isogenic pairs, we need to create feature vectors
     # GBM39-EC: EGFR amplification on ecDNA (~100 copies)
     # GBM39-HSR: EGFR amplification on HSR (~100 copies)
 
@@ -265,7 +261,7 @@ def validate_isogenic_pairs(model, device):
     features_hsr[23] = 1.5   # cnv_std (low heterogeneity)
     features_hsr[30] = 5.5   # expr_EGFR (slightly lower)
 
-    # Pad features for model input
+    # pad features for model input
     for name, features, expected in [
         ("GBM39-EC (ecDNA+)", features_ec, "HIGH (>0.5)"),
         ("GBM39-HSR (HSR)", features_hsr, "LOW (<0.3)"),
@@ -275,7 +271,7 @@ def validate_isogenic_pairs(model, device):
         frag_feat = torch.zeros(1, 64)
         cn_feat = torch.zeros(1, 32)
 
-        # Fill in available features
+        # fill in available features
         seq_feat[0, :min(112, 256)] = torch.tensor(features[:min(112, 256)])
         cn_feat[0, :min(32, 32)] = torch.tensor(features[:32])
 
@@ -301,22 +297,20 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f"\nDevice: {device}")
 
-    # Load model
     print("Loading trained model...")
     model = load_model(device=device)
     print("  Model loaded successfully")
 
-    # Validation 1: Validation set
+    # validation 1: validation set
     probs, labels, metrics_05, metrics_best = validate_val_set(model, device)
 
-    # Validation 2: Cross-source
+    # validation 2: cross-source
     val_data = load_val_data()
     validate_cross_source(model, val_data, device)
 
-    # Validation 3: Isogenic pairs
+    # validation 3: Isogenic pairs
     validate_isogenic_pairs(model, device)
 
-    # Summary
     print("\n" + "=" * 80)
     print("SUMMARY")
     print("=" * 80)
@@ -336,7 +330,6 @@ Module 1 (ecDNA-Former) Validation Results:
     - Hi-C interaction features (cnv_hic_*) are key discriminators
 """)
 
-    # Save results
     output_dir = Path("data/validation")
     output_dir.mkdir(exist_ok=True, parents=True)
 

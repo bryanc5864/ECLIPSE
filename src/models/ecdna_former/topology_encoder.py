@@ -1,9 +1,8 @@
 """
-Topology Encoder for ecDNA-Former.
+topology Encoder for ecDNA-Former.
 
 Encodes chromatin topology from Hi-C contact maps using
 hierarchical graph neural networks.
-
 Key innovations:
 - Multi-resolution encoding (compartment, TAD, loop, enhancer-promoter)
 - Hierarchical graph attention
@@ -41,17 +40,6 @@ class TopologyEncoder(nn.Module):
         num_heads: int = 8,
         dropout: float = 0.1,
     ):
-        """
-        Initialize topology encoder.
-
-        Args:
-            input_dim: Node feature dimension
-            hidden_dim: Hidden dimension
-            output_dim: Output embedding dimension
-            num_levels: Number of hierarchical levels
-            num_heads: Number of attention heads
-            dropout: Dropout rate
-        """
         super().__init__()
 
         self.num_levels = num_levels
@@ -76,7 +64,7 @@ class TopologyEncoder(nn.Module):
             for _ in range(num_levels - 1)
         ])
 
-        # Level aggregation
+        # level aggregation
         self.level_attention = nn.Sequential(
             nn.Linear(hidden_dim * num_levels, hidden_dim),
             nn.ReLU(),
@@ -84,7 +72,7 @@ class TopologyEncoder(nn.Module):
             nn.Softmax(dim=-1),
         )
 
-        # Output projection
+        # output projection
         self.output_proj = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -93,7 +81,7 @@ class TopologyEncoder(nn.Module):
             nn.Linear(hidden_dim, output_dim),
         )
 
-        # Resolution embeddings (learnable)
+        # resolution embeddings (learnable)
         self.resolution_embeddings = nn.Embedding(num_levels, hidden_dim)
 
     def forward(
@@ -105,7 +93,7 @@ class TopologyEncoder(nn.Module):
         level_assignments: Optional[List[torch.Tensor]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Encode topology at multiple resolutions.
+        encode topology at multiple resolutions.
 
         Args:
             node_features: Node features [num_nodes, input_dim]
@@ -113,18 +101,13 @@ class TopologyEncoder(nn.Module):
             edge_attr: Edge attributes [num_edges, edge_dim]
             batch: Batch assignment [num_nodes]
             level_assignments: Node-to-level assignments per level
-
-        Returns:
-            Tuple of:
-                - Node embeddings [num_nodes, output_dim]
-                - Graph embedding [batch_size, output_dim]
         """
-        # Encode at each level
+        # encode at each level
         level_outputs = []
         current_features = node_features
 
         for i, encoder in enumerate(self.level_encoders):
-            # Add resolution embedding
+            # add resolution embedding
             res_emb = self.resolution_embeddings(
                 torch.full((current_features.shape[0],), i, device=current_features.device)
             )
@@ -133,26 +116,24 @@ class TopologyEncoder(nn.Module):
             else:
                 level_input = current_features
 
-            # Encode at this level
             level_out, _ = encoder(level_input, edge_index, edge_attr, batch)
             level_outputs.append(level_out)
 
-            # Pass to next level with connection
+            # pass to next level with connection
             if i < len(self.level_connections):
                 current_features = self.level_connections[i](level_out)
 
-        # Stack level outputs
         stacked = torch.stack(level_outputs, dim=-1)  # [N, H, L]
 
-        # Attention over levels
+        # attention over levels
         concat_levels = stacked.view(stacked.shape[0], -1)  # [N, H*L]
         level_weights = self.level_attention(concat_levels)  # [N, L]
         level_weights = level_weights.unsqueeze(1)  # [N, 1, L]
 
-        # Weighted combination
+        # weighted combination
         combined = (stacked * level_weights).sum(dim=-1)  # [N, H]
 
-        # Project to output
+        # project to output
         node_embeddings = self.output_proj(combined)
 
         # Graph-level pooling
@@ -166,7 +147,7 @@ class TopologyEncoder(nn.Module):
 
 class HierarchicalGraphTransformer(nn.Module):
     """
-    Graph Transformer for a single resolution level.
+    graph Transformer for a single resolution level.
 
     Uses Graph Attention Network v2 with multi-head attention
     and skip connections.
@@ -182,18 +163,6 @@ class HierarchicalGraphTransformer(nn.Module):
         dropout: float = 0.1,
         edge_dim: Optional[int] = None,
     ):
-        """
-        Initialize graph transformer.
-
-        Args:
-            input_dim: Input feature dimension
-            hidden_dim: Hidden dimension
-            output_dim: Output dimension
-            num_heads: Number of attention heads
-            num_layers: Number of transformer layers
-            dropout: Dropout rate
-            edge_dim: Edge feature dimension (optional)
-        """
         super().__init__()
 
         self.input_proj = nn.Linear(input_dim, hidden_dim)
@@ -237,25 +206,20 @@ class HierarchicalGraphTransformer(nn.Module):
         batch: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Forward pass through graph transformer.
+        forward pass through graph transformer.
 
         Args:
             x: Node features [num_nodes, input_dim]
             edge_index: Edge indices [2, num_edges]
             edge_attr: Edge attributes [num_edges, edge_dim]
             batch: Batch assignment [num_nodes]
-
-        Returns:
-            Tuple of:
-                - Node embeddings [num_nodes, output_dim]
-                - Graph embedding [batch_size, output_dim]
         """
-        # Input projection
+        # input projection
         h = self.input_proj(x)
 
-        # Graph attention layers
+        # graph attention layers
         for layer, norm in zip(self.layers, self.norms):
-            # Attention with residual
+            # attention with residual
             h_attn = layer(h, edge_index, edge_attr=edge_attr)
             h = norm(h + self.dropout(h_attn), batch)
 
@@ -263,10 +227,10 @@ class HierarchicalGraphTransformer(nn.Module):
         h_ffn = self.ffn(h)
         h = self.ffn_norm(h + h_ffn, batch)
 
-        # Output projection
+        # output projection
         node_out = self.output_proj(h)
 
-        # Graph pooling
+        # graph pooling
         if batch is not None:
             graph_out = global_mean_pool(node_out, batch)
         else:
@@ -277,7 +241,7 @@ class HierarchicalGraphTransformer(nn.Module):
 
 class HiCGraphBuilder:
     """
-    Build graph representation from Hi-C contact matrices.
+    build graph representation from Hi-C contact matrices.
 
     Converts Hi-C matrices to PyTorch Geometric graph format
     with multi-resolution structure.
@@ -289,14 +253,6 @@ class HiCGraphBuilder:
         contact_threshold: float = 0.01,
         max_distance: int = 10000000,
     ):
-        """
-        Initialize graph builder.
-
-        Args:
-            resolutions: Resolution levels in bp
-            contact_threshold: Minimum contact frequency for edge
-            max_distance: Maximum genomic distance for edges
-        """
         self.resolutions = resolutions
         self.contact_threshold = contact_threshold
         self.max_distance = max_distance
@@ -308,22 +264,19 @@ class HiCGraphBuilder:
         resolution: int = 50000,
     ) -> Data:
         """
-        Build graph from contact matrix.
+        build graph from contact matrix.
 
         Args:
             contact_matrix: Hi-C contact matrix [N, N]
             bin_positions: Genomic positions of bins [N, 2] (start, end)
             resolution: Resolution of the matrix
-
-        Returns:
-            PyTorch Geometric Data object
         """
         n_bins = contact_matrix.shape[0]
 
-        # Threshold and extract edges
+        # threshold and extract edges
         edges_i, edges_j = torch.where(contact_matrix > self.contact_threshold)
 
-        # Filter by distance if positions available
+        # filter by distance if positions available
         if bin_positions is not None:
             distances = torch.abs(
                 bin_positions[edges_i, 0] - bin_positions[edges_j, 0]
@@ -334,10 +287,10 @@ class HiCGraphBuilder:
 
         edge_index = torch.stack([edges_i, edges_j], dim=0)
 
-        # Edge weights (contact frequency)
+        # edge weights (contact frequency)
         edge_attr = contact_matrix[edges_i, edges_j].unsqueeze(-1)
 
-        # Node features (could be augmented with genomic features)
+        # node features (could be augmented with genomic features)
         node_features = self._compute_node_features(
             contact_matrix, bin_positions, resolution
         )
@@ -359,11 +312,11 @@ class HiCGraphBuilder:
         n_bins = contact_matrix.shape[0]
         features = []
 
-        # Local contact density
+        # local contact density
         row_sums = contact_matrix.sum(dim=1)
         features.append(row_sums.unsqueeze(-1))
 
-        # Local vs long-range contact ratio
+        # local vs long-range contact ratio
         local_mask = torch.eye(n_bins, device=contact_matrix.device).bool()
         for i in range(1, 6):
             local_mask |= torch.diag(torch.ones(n_bins - i), i).bool().to(contact_matrix.device)
@@ -374,7 +327,7 @@ class HiCGraphBuilder:
         ratio = local_contacts / (long_range + 1e-8)
         features.append(ratio.unsqueeze(-1))
 
-        # Insulation score (boundary detection)
+        # insulation score (boundary detection)
         insulation = self._compute_insulation_score(contact_matrix)
         features.append(insulation.unsqueeze(-1))
 
@@ -382,7 +335,6 @@ class HiCGraphBuilder:
         compartment = self._compute_compartment_score(contact_matrix)
         features.append(compartment.unsqueeze(-1))
 
-        # Position embedding
         pos_emb = self._positional_embedding(n_bins, 12)
         features.append(pos_emb)
 
@@ -398,7 +350,7 @@ class HiCGraphBuilder:
         insulation = torch.zeros(n, device=contact_matrix.device)
 
         for i in range(window, n - window):
-            # Contacts across the bin
+            # contacts across the bin
             upstream = contact_matrix[i-window:i, i-window:i].mean()
             downstream = contact_matrix[i:i+window, i:i+window].mean()
             cross = contact_matrix[i-window:i, i:i+window].mean()
@@ -412,10 +364,10 @@ class HiCGraphBuilder:
         contact_matrix: torch.Tensor
     ) -> torch.Tensor:
         """Compute simplified A/B compartment score."""
-        # Use correlation with distance-normalized matrix
+        # use correlation with distance-normalized matrix
         n = contact_matrix.shape[0]
 
-        # Distance normalize
+        # distance normalize
         expected = torch.zeros_like(contact_matrix)
         for d in range(n):
             diag = torch.diagonal(contact_matrix, d)
@@ -426,13 +378,13 @@ class HiCGraphBuilder:
 
         oe = contact_matrix / (expected + 1e-8)
 
-        # Correlation matrix
+        # correlation matrix
         oe_centered = oe - oe.mean(dim=1, keepdim=True)
         corr = torch.mm(oe_centered, oe_centered.t())
         norms = torch.sqrt((oe_centered ** 2).sum(dim=1, keepdim=True))
         corr = corr / (norms @ norms.t() + 1e-8)
 
-        # First eigenvector gives compartment
+        # first eigenvector gives compartment
         try:
             _, eigvecs = torch.linalg.eigh(corr)
             compartment = eigvecs[:, -1]

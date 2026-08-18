@@ -1,5 +1,5 @@
 """
-Dynamics components for CircularODE.
+dynamics components for CircularODE.
 
 Provides:
 - DriftNetwork: Deterministic dynamics (growth, selection)
@@ -16,7 +16,7 @@ import math
 
 class DriftNetwork(nn.Module):
     """
-    Neural network for drift (deterministic dynamics).
+    neural network for drift (deterministic dynamics).
 
     Models dz/dt = f(z, t, treatment) where:
     - Growth from oncogene fitness advantage
@@ -32,29 +32,19 @@ class DriftNetwork(nn.Module):
         num_layers: int = 3,
         time_embedding_dim: int = 32,
     ):
-        """
-        Initialize drift network.
-
-        Args:
-            latent_dim: Latent state dimension
-            treatment_dim: Treatment embedding dimension
-            hidden_dim: Hidden layer dimension
-            num_layers: Number of hidden layers
-            time_embedding_dim: Time embedding dimension
-        """
         super().__init__()
 
         self.latent_dim = latent_dim
         self.time_embedding_dim = time_embedding_dim
 
-        # Time embedding
+        # time embedding
         self.time_mlp = nn.Sequential(
             nn.Linear(1, time_embedding_dim),
             nn.SiLU(),
             nn.Linear(time_embedding_dim, time_embedding_dim),
         )
 
-        # Main network
+        # main network
         input_dim = latent_dim + treatment_dim + time_embedding_dim
         layers = []
         for i in range(num_layers):
@@ -67,7 +57,7 @@ class DriftNetwork(nn.Module):
             ])
         self.network = nn.Sequential(*layers)
 
-        # Fitness landscape parameters
+        # fitness landscape parameters
         self.fitness_scale = nn.Parameter(torch.tensor(0.1))
         self.carrying_capacity = nn.Parameter(torch.tensor(100.0))
 
@@ -78,7 +68,7 @@ class DriftNetwork(nn.Module):
         treatment_emb: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
-        Compute drift.
+        compute drift.
 
         Args:
             z: Latent state [batch, latent_dim]
@@ -90,33 +80,33 @@ class DriftNetwork(nn.Module):
         """
         batch_size = z.shape[0]
 
-        # Time embedding
+        # time embedding
         if t.dim() == 0:
             t = t.unsqueeze(0).expand(batch_size, 1)
         elif t.dim() == 1:
             t = t.unsqueeze(-1)
         time_emb = self.time_mlp(t)
 
-        # Prepare treatment
+        # prepare treatment
         if treatment_emb is None:
             treatment_emb = torch.zeros(batch_size, 16, device=z.device)
 
-        # Concatenate inputs
+        # concatenate inputs
         x = torch.cat([z, treatment_emb, time_emb], dim=-1)
 
-        # Base drift from network
+        # base drift from network
         drift = self.network(x)
 
-        # Add physics-informed components
-        # 1. Fitness advantage (growth term)
-        copy_number = z[:, 0:1]  # First dimension is copy number
+        # add physics-informed components
+        # fitness advantage (growth term)
+        copy_number = z[:, 0:1]  # first dimension is copy number
         fitness_growth = self.fitness_scale * copy_number
 
-        # 2. Carrying capacity (logistic growth)
+        # carrying capacity (logistic growth)
         capacity_term = 1 - copy_number / self.carrying_capacity
         fitness_growth = fitness_growth * F.relu(capacity_term)
 
-        # Combine learned and physics-based drift (out-of-place to avoid autograd issues)
+        # combine learned and physics-based drift (out-of-place to avoid autograd issues)
         drift = torch.cat([drift[:, 0:1] + fitness_growth, drift[:, 1:]], dim=1)
 
         return drift
@@ -124,7 +114,7 @@ class DriftNetwork(nn.Module):
 
 class DiffusionNetwork(nn.Module):
     """
-    Neural network for diffusion (stochastic dynamics).
+    neural network for diffusion (stochastic dynamics).
 
     Models the noise structure that captures:
     - Cell-to-cell heterogeneity
@@ -139,15 +129,6 @@ class DiffusionNetwork(nn.Module):
         output_type: str = "diagonal",
         min_diffusion: float = 0.01,
     ):
-        """
-        Initialize diffusion network.
-
-        Args:
-            latent_dim: Latent state dimension
-            hidden_dim: Hidden dimension
-            output_type: "diagonal" or "full" diffusion matrix
-            min_diffusion: Minimum diffusion for numerical stability
-        """
         super().__init__()
 
         self.latent_dim = latent_dim
@@ -165,15 +146,14 @@ class DiffusionNetwork(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
             nn.SiLU(),
             nn.Linear(hidden_dim, output_dim),
-            nn.Softplus(),  # Ensure positive diffusion
+            nn.Softplus(),  # ensure positive diffusion
         )
 
-        # Segregation scale parameter
         self.segregation_scale = nn.Parameter(torch.tensor(0.5))
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         """
-        Compute diffusion coefficient.
+        compute diffusion coefficient.
 
         Args:
             z: Latent state [batch, latent_dim]
@@ -182,15 +162,15 @@ class DiffusionNetwork(nn.Module):
             Diffusion [batch, latent_dim] for diagonal
             or [batch, latent_dim, latent_dim] for full
         """
-        # Base diffusion from network
+        # base diffusion from network
         base_diff = self.network(z)
 
         if self.output_type == "diagonal":
             diffusion = base_diff + self.min_diffusion
         else:
-            # Reshape to matrix
+            # reshape to matrix
             diffusion = base_diff.view(-1, self.latent_dim, self.latent_dim)
-            # Make positive semi-definite
+            # make positive semi-definite
             diffusion = torch.bmm(diffusion, diffusion.transpose(1, 2))
             diffusion = diffusion + self.min_diffusion * torch.eye(
                 self.latent_dim, device=z.device
@@ -200,7 +180,7 @@ class DiffusionNetwork(nn.Module):
 
     def get_segregation_noise(self, copy_number: torch.Tensor) -> torch.Tensor:
         """
-        Compute segregation noise that scales with sqrt(copy number).
+        compute segregation noise that scales with sqrt(copy number).
 
         Based on binomial segregation statistics:
         Var(CN') ~ CN * p * (1-p) where p = 0.5 for random segregation.
@@ -224,24 +204,17 @@ class SegregationPhysics(nn.Module):
         inheritance_model: str = "binomial_with_selection",
         selection_strength: float = 0.1,
     ):
-        """
-        Initialize segregation physics.
-
-        Args:
-            inheritance_model: Type of inheritance model
-            selection_strength: Strength of selection for ecDNA
-        """
         super().__init__()
 
         self.inheritance_model = inheritance_model
         self.selection_strength = nn.Parameter(torch.tensor(selection_strength))
 
-        # Learned segregation bias (slight preference for ecDNA)
+        # learned segregation bias (slight preference for ecDNA)
         self.segregation_bias = nn.Parameter(torch.tensor(0.5))
 
     def expected_variance(self, copy_number: torch.Tensor) -> torch.Tensor:
         """
-        Compute expected variance under binomial segregation.
+        compute expected variance under binomial segregation.
 
         For binomial(n, p) where n = CN and p = 0.5:
         Var = n * p * (1-p) = CN * 0.25
@@ -250,14 +223,14 @@ class SegregationPhysics(nn.Module):
 
     def segregation_probability(self, copy_number: torch.Tensor) -> torch.Tensor:
         """
-        Compute probability of ecDNA inheritance to a daughter cell.
+        compute probability of ecDNA inheritance to a daughter cell.
 
         Under pure random segregation, p = 0.5.
         With selection, cells with more ecDNA may have slight advantage.
         """
         base_prob = torch.sigmoid(self.segregation_bias)
 
-        # Selection: higher CN slightly increases inheritance probability
+        # selection: higher CN slightly increases inheritance probability
         selection_term = self.selection_strength * torch.tanh(copy_number / 50)
 
         return (base_prob + selection_term).clamp(0.01, 0.99)
@@ -268,7 +241,7 @@ class SegregationPhysics(nn.Module):
         copy_number: torch.Tensor,
     ) -> torch.Tensor:
         """
-        Compute physics constraint loss.
+        compute physics constraint loss.
 
         Penalizes deviations from expected binomial variance.
         """
@@ -281,22 +254,18 @@ class SegregationPhysics(nn.Module):
         n_samples: int = 1,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Sample ecDNA segregation during cell division.
+        sample ecDNA segregation during cell division.
 
         Args:
             copy_number: Current copy number [batch]
             n_samples: Number of division samples
-
-        Returns:
-            Tuple of (daughter1_CN, daughter2_CN) tensors
         """
         batch_size = copy_number.shape[0]
         cn_int = copy_number.round().long()
 
-        # Segregation probability
         p = self.segregation_probability(copy_number)
 
-        # Sample binomial for daughter 1
+        # sample binomial for daughter 1
         daughter1 = torch.zeros(batch_size, n_samples, device=copy_number.device)
         for i in range(batch_size):
             n = cn_int[i].item()
@@ -307,7 +276,7 @@ class SegregationPhysics(nn.Module):
                     torch.tensor([prob] * n_samples)
                 )
 
-        # Daughter 2 gets the rest
+        # daughter 2 gets the rest
         daughter2 = copy_number.unsqueeze(1) - daughter1
 
         return daughter1, daughter2
@@ -315,7 +284,7 @@ class SegregationPhysics(nn.Module):
 
 class FitnessLandscape(nn.Module):
     """
-    Learned fitness landscape for ecDNA.
+    learned fitness landscape for ecDNA.
 
     Models how fitness depends on:
     - Oncogene copy number (dosage effect)
@@ -328,13 +297,6 @@ class FitnessLandscape(nn.Module):
         input_dim: int = 1,
         hidden_dim: int = 64,
     ):
-        """
-        Initialize fitness landscape.
-
-        Args:
-            input_dim: Input dimension (typically just copy number)
-            hidden_dim: Hidden dimension
-        """
         super().__init__()
 
         self.network = nn.Sequential(
@@ -345,13 +307,13 @@ class FitnessLandscape(nn.Module):
             nn.Linear(hidden_dim, 1),
         )
 
-        # Optimal copy number (learned)
+        # optimal copy number (learned)
         self.optimal_cn = nn.Parameter(torch.tensor(20.0))
         self.fitness_width = nn.Parameter(torch.tensor(50.0))
 
     def forward(self, copy_number: torch.Tensor) -> torch.Tensor:
         """
-        Compute fitness from copy number.
+        compute fitness from copy number.
 
         Args:
             copy_number: ecDNA copy number [batch, 1]
@@ -359,12 +321,12 @@ class FitnessLandscape(nn.Module):
         Returns:
             Fitness value [batch, 1]
         """
-        # Learned component
+        # learned component
         learned_fitness = self.network(copy_number)
 
-        # Prior: Gaussian centered at optimal CN
+        # prior: Gaussian centered at optimal CN
         distance_from_optimal = (copy_number - self.optimal_cn) ** 2
         gaussian_fitness = torch.exp(-distance_from_optimal / (2 * self.fitness_width ** 2))
 
-        # Combine
+        # combine
         return learned_fitness + gaussian_fitness

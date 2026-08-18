@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """
-Feature group ablation study for ecDNA-Former (Module 1).
+feature group ablation study for ecDNA-Former (Module 1).
 
 Zeroes out each feature group and retrains to measure contribution.
 Saves results to data/validation/ablation_results.csv.
-
 Feature groups:
-  - Hi-C: cnv_hic_*, cnv_hiclr_*, oncogene_cnv_hic_*, hic_*
-  - CNV: cnv_* (oncogene + stats)
-  - Expression: expr_*, oncogene_expr_*, n_oncogenes_high_expr
-  - Dosage: dosage_*
-  - All features (baseline)
+- Hi-C: cnv_hic_*, cnv_hiclr_*, oncogene_cnv_hic_*, hic_*
+- CNV: cnv_* (oncogene + stats)
+- Expression: expr_*, oncogene_expr_*, n_oncogenes_high_expr
+- Dosage: dosage_*
+- All features (baseline)
 
 Usage:
     python scripts/run_ablation.py --epochs 200 --patience 30
@@ -29,7 +28,7 @@ import torch
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Feature groups defined by prefix
+# feature groups defined by prefix
 ABLATION_GROUPS = {
     "Hi-C": lambda name: (
         name.startswith("cnv_hic_") or
@@ -55,26 +54,25 @@ def zero_feature_group(npz_path, feature_names, group_fn, output_path):
     """Create a copy of NPZ with one feature group zeroed out."""
     data = np.load(npz_path, allow_pickle=True)
 
-    # Find which raw feature indices to zero
+    # find which raw feature indices to zero
     group_indices = [i for i, name in enumerate(feature_names) if group_fn(name)]
     n_zeroed = len(group_indices)
     logger.info(f"    Zeroing {n_zeroed} features")
 
-    # The raw features are packed into 4 arrays. We need to figure out
+    # the raw features are packed into 4 arrays. We need to figure out
     # which packed positions correspond to which raw feature indices.
-    # From extract_nonleaky_features.py:
-    #   sequence_features[:, :N] = X[:, :N]  (first N of all features)
-    #   topology_features[:, :N] = X[:, :N]  (same)
-    #   fragile_site_features[:, :N] = X[:, :min(64,N)]
-    #   copy_number_features = X[:, cnv_cols[:32]]
-    #
-    # The simplest approach: zero the group indices across ALL packed arrays.
+    # from extract_nonleaky_features.py:
+    # sequence_features[:, :N] = X[:, :N]  (first N of all features)
+    # topology_features[:, :N] = X[:, :N]  (same)
+    # fragile_site_features[:, :N] = X[:, :min(64,N)]
+    # copy_number_features = X[:, cnv_cols[:32]]
+    # simplest thing: zero the group indices in every packed array.
     arrays = {}
     for key in data.files:
         arr = data[key].copy() if hasattr(data[key], 'copy') else data[key]
         arrays[key] = arr
 
-    # Zero in sequence_features (first 112 positions hold raw features)
+    # zero in sequence_features (first 112 positions hold raw features)
     for idx in group_indices:
         if idx < arrays["sequence_features"].shape[1]:
             arrays["sequence_features"][:, idx] = 0.0
@@ -116,7 +114,7 @@ def train_ablation(ablation_name, fold_data_dir, checkpoint_dir, epochs, patienc
 
     trainer.train(num_epochs=epochs, early_stopping_patience=patience)
 
-    # Extract best AUROC metrics
+    # extract best AUROC metrics
     log_dir = abl_ckpt / "logs"
     val_logs = sorted(log_dir.glob("validation_log_*.csv"))
     if val_logs:
@@ -149,30 +147,30 @@ def main():
     data_dir = Path(args.data_dir)
     features_dir = data_dir / "features"
 
-    # Load feature names
+    # load feature names
     train_data = np.load(features_dir / "module1_features_train.npz", allow_pickle=True)
     feature_names = list(train_data["feature_names"])
     logger.info(f"Total features: {len(feature_names)}")
 
-    # Count features per group
+    # count features per group
     for group_name, group_fn in ABLATION_GROUPS.items():
         count = sum(1 for name in feature_names if group_fn(name))
         logger.info(f"  {group_name}: {count} features")
 
-    # Use a temp directory to avoid overwriting originals
+    # use a temp directory to avoid overwriting originals
     import tempfile
     import os
     tmp_data_dir = Path(tempfile.mkdtemp(prefix="eclipse_ablation_"))
     tmp_features_dir = tmp_data_dir / "features"
     tmp_features_dir.mkdir(parents=True, exist_ok=True)
-    # Symlink required subdirectories so ECDNADataset.from_data_dir works
+    # symlink required subdirectories so ECDNADataset.from_data_dir works
     for subdir in ["ecdna_labels", "cytocell_db", "depmap", "hic", "supplementary"]:
         src = data_dir / subdir
         if src.exists():
             os.symlink(src.resolve(), tmp_data_dir / subdir)
     logger.info(f"Using temp directory for ablation data: {tmp_data_dir}")
 
-    # Copy original NPZ files to temp directory
+    # copy original NPZ files to temp directory
     train_npz = features_dir / "module1_features_train.npz"
     val_npz = features_dir / "module1_features_val.npz"
     tmp_train_npz = tmp_features_dir / "module1_features_train.npz"
@@ -184,7 +182,7 @@ def main():
     all_results = []
 
     try:
-        # First: train full model baseline
+        # first: train full model baseline
         logger.info(f"\n{'='*60}")
         logger.info("BASELINE (full features)")
         logger.info(f"{'='*60}")
@@ -195,13 +193,13 @@ def main():
         all_results.append(baseline)
         logger.info(f"  Baseline AUROC: {baseline['auroc']:.3f}")
 
-        # Ablate each group
+        # ablate each group
         for group_name, group_fn in ABLATION_GROUPS.items():
             logger.info(f"\n{'='*60}")
             logger.info(f"ABLATION: -{group_name}")
             logger.info(f"{'='*60}")
 
-            # Create ablated NPZ files from the original copies
+            # create ablated NPZ files from the original copies
             n_train = zero_feature_group(str(train_npz), feature_names, group_fn, str(tmp_train_npz))
             n_val = zero_feature_group(str(val_npz), feature_names, group_fn, str(tmp_val_npz))
 
@@ -218,11 +216,10 @@ def main():
             logger.info(f"  -{group_name} AUROC: {result['auroc']:.3f} (Δ = {delta:+.3f})")
 
     finally:
-        # Clean up temp directory
+        # clean up temp directory
         shutil.rmtree(tmp_data_dir, ignore_errors=True)
         logger.info("Cleaned up temp ablation data directory")
 
-    # Summary
     results_df = pd.DataFrame(all_results)
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)

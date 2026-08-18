@@ -65,7 +65,7 @@ def train_fold(fold_idx, fold_data_dir, checkpoint_dir, epochs, patience, device
     fold_ckpt = Path(checkpoint_dir) / f"fold_{fold_idx}"
     fold_ckpt.mkdir(parents=True, exist_ok=True)
 
-    # Load fold data from temp directory (not the original)
+    # load fold data from temp directory (not the original)
     train_dataset = ECDNADataset.from_data_dir(data_dir=fold_data_dir, split="train")
     val_dataset = ECDNADataset.from_data_dir(data_dir=fold_data_dir, split="val")
 
@@ -88,7 +88,7 @@ def train_fold(fold_idx, fold_data_dir, checkpoint_dir, epochs, patience, device
 
     trainer.train(num_epochs=epochs, early_stopping_patience=patience)
 
-    # Extract best metrics from validation log
+    # extract best metrics from validation log
     log_dir = fold_ckpt / "logs"
     val_logs = sorted(log_dir.glob("validation_log_*.csv"))
     if val_logs:
@@ -129,22 +129,21 @@ def main():
 
     logger.info(f"Running {args.n_folds}-fold stratified CV on {device}")
 
-    # Load full dataset
     combined = load_full_dataset(data_dir)
     labels = combined["labels"]
     n_samples = len(labels)
 
-    # Create stratified folds
+    # create stratified folds
     skf = StratifiedKFold(n_splits=args.n_folds, shuffle=True, random_state=args.seed)
     folds = list(skf.split(np.zeros(n_samples), labels))
 
-    # Use a temp directory for fold data to avoid overwriting originals
+    # use a temp directory for fold data to avoid overwriting originals
     import tempfile
     import os
     fold_data_dir = Path(tempfile.mkdtemp(prefix="eclipse_cv_"))
     fold_features_dir = fold_data_dir / "features"
     fold_features_dir.mkdir(parents=True, exist_ok=True)
-    # Symlink required subdirectories so ECDNADataset.from_data_dir works
+    # symlink required subdirectories so ECDNADataset.from_data_dir works
     for subdir in ["ecdna_labels", "cytocell_db", "depmap", "hic", "supplementary"]:
         src = data_dir / subdir
         if src.exists():
@@ -159,7 +158,7 @@ def main():
             logger.info(f"FOLD {fold_idx + 1}/{args.n_folds}")
             logger.info(f"{'='*60}")
 
-            # Save fold-specific NPZ files to temp directory
+            # save fold-specific NPZ files to temp directory
             save_fold_npz(combined, train_idx, fold_features_dir / "module1_features_train.npz")
             save_fold_npz(combined, val_idx, fold_features_dir / "module1_features_val.npz")
 
@@ -180,12 +179,11 @@ def main():
                         f"(epoch {metrics.get('best_epoch', '?')}, {elapsed:.0f}s)")
 
     finally:
-        # Clean up temp directory
+        # clean up temp directory
         import shutil
         shutil.rmtree(fold_data_dir, ignore_errors=True)
         logger.info("Cleaned up temp fold data directory")
 
-    # Summary
     results_df = pd.DataFrame(all_metrics)
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)

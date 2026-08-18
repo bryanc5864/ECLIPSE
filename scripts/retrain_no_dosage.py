@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-Retrain ecDNA-Former without dosage features (Module 1).
+retrain ecDNA-Former without dosage features (Module 1).
 
 Feature ablation showed that removing the 9 dosage_* features improves
-AUROC from 0.787 to 0.811. This script retrains the full model without
-dosage features and runs a bootstrap comparison.
+AUROC from 0.787 to 0.811, so retrain without them and bootstrap the comparison.
 
 Usage:
     python scripts/retrain_no_dosage.py --epochs 200 --patience 30
@@ -43,7 +42,7 @@ def main():
     data_dir = Path(args.data_dir)
     features_dir = data_dir / "features"
 
-    # Load feature names
+    # load feature names
     train_data = np.load(features_dir / "module1_features_train.npz", allow_pickle=True)
     feature_names = list(train_data["feature_names"])
 
@@ -51,13 +50,13 @@ def main():
     n_dosage = sum(1 for name in feature_names if dosage_fn(name))
     logger.info(f"Total features: {len(feature_names)}, Dosage features to zero: {n_dosage}")
 
-    # Create temp data directory with dosage features zeroed
+    # create temp data directory with dosage features zeroed
     import tempfile
     tmp_data_dir = Path(tempfile.mkdtemp(prefix="eclipse_nodosage_"))
     tmp_features_dir = tmp_data_dir / "features"
     tmp_features_dir.mkdir(parents=True, exist_ok=True)
 
-    # Symlink required subdirectories
+    # symlink required subdirectories
     for subdir in ["ecdna_labels", "cytocell_db", "depmap", "hic", "supplementary"]:
         src = data_dir / subdir
         if src.exists():
@@ -72,7 +71,7 @@ def main():
     zero_feature_group(str(train_npz), feature_names, dosage_fn, str(tmp_train_npz))
     zero_feature_group(str(val_npz), feature_names, dosage_fn, str(tmp_val_npz))
 
-    # Train model
+    # train model
     from src.data import ECDNADataset, create_dataloader
     from src.models import ECDNAFormer
     from src.training import ECDNAFormerTrainer
@@ -106,7 +105,7 @@ def main():
 
         trainer.train(num_epochs=args.epochs, early_stopping_patience=args.patience)
 
-        # Extract best metrics
+        # extract best metrics
         log_dir = ckpt_dir / "logs"
         val_logs = sorted(log_dir.glob("validation_log_*.csv"))
         if val_logs:
@@ -130,17 +129,16 @@ def main():
             results = {"config": "no_dosage", "auroc": 0.0}
             no_dosage_auroc = 0.0
 
-        # Save results
         output_dir = data_dir / "validation"
         output_dir.mkdir(exist_ok=True)
         pd.DataFrame([results]).to_csv(output_dir / "no_dosage_results.csv", index=False)
 
-        # Bootstrap comparison vs full model predictions
+        # bootstrap comparison vs full model predictions
         logger.info(f"\n{'='*60}")
         logger.info("Bootstrap comparison: no-dosage vs full model")
         logger.info(f"{'='*60}")
 
-        # Get predictions from no-dosage model
+        # get predictions from no-dosage model
         model.eval()
         val_data = np.load(str(tmp_val_npz), allow_pickle=True)
         y_val = val_data["labels"]
@@ -155,7 +153,7 @@ def main():
             outputs = model(**batch)
             no_dosage_probs = outputs["formation_probability"].cpu().numpy().flatten()
 
-        # Get predictions from full model (if checkpoint exists)
+        # get predictions from full model (if checkpoint exists)
         full_ckpt = Path("checkpoints/best.pt")
         if full_ckpt.exists():
             full_model = ECDNAFormer()
@@ -167,7 +165,7 @@ def main():
             full_model.to(device)
             full_model.eval()
 
-            # Use original (non-zeroed) val data for full model
+            # use original (non-zeroed) val data for full model
             orig_val = np.load(str(val_npz), allow_pickle=True)
             with torch.no_grad():
                 batch_full = {

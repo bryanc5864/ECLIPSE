@@ -5,7 +5,6 @@ Integrates all three modules:
 - Module 1 (ecDNA-Former): Predicts ecDNA formation
 - Module 2 (CircularODE): Models ecDNA dynamics
 - Module 3 (VulnCausal): Discovers therapeutic vulnerabilities
-
 Provides unified patient stratification and treatment recommendation.
 """
 
@@ -45,14 +44,12 @@ class PatientStratification:
 
 class ECLIPSE(nn.Module):
     """
-    ECLIPSE: Extrachromosomal Circular DNA Learning for Integrated
-    Prediction of Synthetic-lethality and Expression.
+    ECLIPSE: Extrachromosomal Circular DNA Learning for Integrated Prediction of Synthetic-lethality and Expression.
 
     A unified computational framework that combines:
     1. ecDNA formation prediction (ecDNA-Former)
     2. ecDNA evolutionary dynamics (CircularODE)
     3. Therapeutic vulnerability discovery (VulnCausal)
-
     Provides comprehensive patient stratification for ecDNA-related
     cancer treatment planning.
     """
@@ -70,30 +67,14 @@ class ECLIPSE(nn.Module):
         num_genes: int = 18000,
         expression_dim: int = 20000,
         num_environments: int = 20,
-        # Integration config
+        # integration config
         integration_hidden_dim: int = 256,
         use_all_modules: bool = True,
     ):
-        """
-        Initialize ECLIPSE framework.
-
-        Args:
-            sequence_model: Type of sequence encoder for ecDNA-Former
-            sequence_dim: Sequence embedding dimension
-            topology_dim: Topology embedding dimension
-            dynamics_latent_dim: CircularODE latent dimension
-            dynamics_hidden_dim: CircularODE hidden dimension
-            num_genes: Number of genes for VulnCausal
-            expression_dim: Expression dimension
-            num_environments: Number of cellular environments
-            integration_hidden_dim: Integration layer hidden dimension
-            use_all_modules: Whether to use all three modules
-        """
         super().__init__()
 
         self.use_all_modules = use_all_modules
 
-        # === Module 1: ecDNA-Former ===
         self.ecdna_former = ECDNAFormer(
             sequence_model=sequence_model,
             sequence_dim=sequence_dim,
@@ -101,13 +82,11 @@ class ECLIPSE(nn.Module):
             fusion_dim=integration_hidden_dim,
         )
 
-        # === Module 2: CircularODE ===
         self.circular_ode = CircularODE(
             latent_dim=dynamics_latent_dim,
             hidden_dim=dynamics_hidden_dim,
         )
 
-        # === Module 3: VulnCausal ===
         self.vuln_causal = VulnCausal(
             num_genes=num_genes,
             expression_dim=expression_dim,
@@ -115,11 +94,10 @@ class ECLIPSE(nn.Module):
             hidden_dim=integration_hidden_dim,
         )
 
-        # === Integration Layer ===
-        # Combines outputs from all modules for patient stratification
-        module1_dim = integration_hidden_dim  # From ecDNA-Former
-        module2_dim = dynamics_latent_dim + 2  # Latent + resistance + extinction
-        module3_dim = 128  # From VulnCausal causal representation
+        # combines outputs from all modules for patient stratification
+        module1_dim = integration_hidden_dim  # from ecDNA-Former
+        module2_dim = dynamics_latent_dim + 2  # latent + resistance + extinction
+        module3_dim = 128  # from VulnCausal causal representation
 
         self.integration_network = nn.Sequential(
             nn.Linear(module1_dim + module2_dim + module3_dim, integration_hidden_dim),
@@ -130,14 +108,14 @@ class ECLIPSE(nn.Module):
             nn.GELU(),
         )
 
-        # Risk classification head
+        # risk classification head
         self.risk_classifier = nn.Sequential(
             nn.Linear(integration_hidden_dim // 2, 64),
             nn.ReLU(),
             nn.Linear(64, 4),  # 4 risk levels
         )
 
-        # Treatment response prediction
+        # treatment response prediction
         self.treatment_response = nn.Sequential(
             nn.Linear(integration_hidden_dim // 2 + 16, 64),  # + treatment embedding
             nn.ReLU(),
@@ -161,30 +139,13 @@ class ECLIPSE(nn.Module):
         crispr_scores: Optional[torch.Tensor] = None,
         ecdna_labels: Optional[torch.Tensor] = None,
         environments: Optional[torch.Tensor] = None,
-        # Control
+        # control
         run_all_modules: bool = True,
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass through ECLIPSE.
+        forward pass through ECLIPSE.
 
         Can run individual modules or full pipeline.
-
-        Args:
-            sequence_features: Pre-computed sequence features
-            topology_features: Pre-computed topology features
-            fragile_site_features: Pre-computed fragile site features
-            copy_number_features: Copy number features
-            initial_state: Initial ecDNA state for dynamics
-            time_points: Time points for trajectory prediction
-            treatment_info: Treatment information dictionary
-            expression: Gene expression data
-            crispr_scores: CRISPR dependency scores
-            ecdna_labels: ecDNA status labels
-            environments: Environment (lineage) IDs
-            run_all_modules: Whether to run all three modules
-
-        Returns:
-            Dictionary with outputs from all modules
         """
         results = {}
         batch_size = self._infer_batch_size(
@@ -192,7 +153,6 @@ class ECLIPSE(nn.Module):
         )
         device = self._infer_device(sequence_features, expression, initial_state)
 
-        # === Module 1: ecDNA Formation Prediction ===
         if sequence_features is not None or topology_features is not None:
             former_outputs = self.ecdna_former(
                 sequence_features=sequence_features,
@@ -208,7 +168,6 @@ class ECLIPSE(nn.Module):
         else:
             results["former_embedding"] = torch.zeros(batch_size, 256, device=device)
 
-        # === Module 2: ecDNA Dynamics ===
         if initial_state is not None and time_points is not None:
             dynamics_outputs = self.circular_ode(
                 initial_state=initial_state,
@@ -219,7 +178,7 @@ class ECLIPSE(nn.Module):
             results["resistance_probability"] = dynamics_outputs["resistance_probability"]
             results["extinction_probability"] = dynamics_outputs["extinction_probability"]
 
-            # Dynamics embedding
+            # dynamics embedding
             final_latent = dynamics_outputs["latent_trajectory"][:, -1, :]
             dynamics_emb = torch.cat([
                 final_latent,
@@ -230,7 +189,6 @@ class ECLIPSE(nn.Module):
         else:
             results["dynamics_embedding"] = torch.zeros(batch_size, 10, device=device)
 
-        # === Module 3: Vulnerability Discovery ===
         if expression is not None and crispr_scores is not None:
             vuln_outputs = self.vuln_causal(
                 expression=expression,
@@ -249,7 +207,6 @@ class ECLIPSE(nn.Module):
         else:
             results["vuln_embedding"] = torch.zeros(batch_size, 128, device=device)
 
-        # === Integration ===
         if run_all_modules:
             combined = torch.cat([
                 results["former_embedding"],
@@ -260,7 +217,7 @@ class ECLIPSE(nn.Module):
             integrated = self.integration_network(combined)
             results["integrated_embedding"] = integrated
 
-            # Risk classification
+            # risk classification
             risk_logits = self.risk_classifier(integrated)
             results["risk_logits"] = risk_logits
             results["risk_probabilities"] = F.softmax(risk_logits, dim=-1)
@@ -273,46 +230,34 @@ class ECLIPSE(nn.Module):
         genomic_data: Dict[str, torch.Tensor],
         clinical_data: Optional[Dict] = None,
     ) -> PatientStratification:
-        """
-        Generate comprehensive patient stratification.
-
-        Args:
-            patient_id: Patient identifier
-            genomic_data: Dictionary with genomic features
-            clinical_data: Optional clinical information
-
-        Returns:
-            PatientStratification object with all predictions
-        """
+        """generate comprehensive patient stratification."""
         with torch.no_grad():
-            # Run full pipeline
+            # run full pipeline
             outputs = self.forward(**genomic_data, run_all_modules=True)
 
-        # Extract predictions
+        # extract predictions
         formation_prob = outputs.get("formation_probability", torch.tensor([0.5])).item()
 
-        # Get predicted oncogenes
+        # get predicted oncogenes
         oncogene_probs = outputs.get("oncogene_probabilities", torch.zeros(1, 20))
         top_oncogenes = self._get_top_oncogenes(oncogene_probs[0])
 
-        # Get trajectory
         trajectory = outputs.get("copy_number_trajectory", None)
 
-        # Resistance probability
         resistance_prob = outputs.get("resistance_probability", torch.tensor([0.0])).item()
 
-        # Vulnerability ranking (if available)
+        # vulnerability ranking (if available)
         vulnerabilities = []
         if "synthetic_lethality_scores" in outputs:
             vulnerabilities = self._format_vulnerabilities(
                 outputs["synthetic_lethality_scores"]
             )
 
-        # Risk level
+        # risk level
         risk_probs = outputs.get("risk_probabilities", torch.tensor([[0.25, 0.25, 0.25, 0.25]]))
         risk_level = self._determine_risk_level(risk_probs[0], formation_prob)
 
-        # Generate recommendations
+        # generate recommendations
         monitoring = self._recommend_monitoring(risk_level, formation_prob)
         treatments = self._recommend_treatments(
             risk_level, vulnerabilities, resistance_prob
@@ -437,14 +382,7 @@ class ECLIPSE(nn.Module):
         load_modules: bool = True,
         **kwargs
     ) -> "ECLIPSE":
-        """
-        Load ECLIPSE from checkpoint.
-
-        Args:
-            checkpoint_path: Path to checkpoint
-            load_modules: Whether to load individual module weights
-            **kwargs: Override config options
-        """
+        """load ECLIPSE from checkpoint."""
         checkpoint = torch.load(checkpoint_path, map_location="cpu")
         config = checkpoint.get("config", {})
         config.update(kwargs)
@@ -460,14 +398,7 @@ class ECLIPSE(nn.Module):
         config: Optional[Dict] = None,
         save_modules: bool = True,
     ):
-        """
-        Save ECLIPSE checkpoint.
-
-        Args:
-            path: Save path
-            config: Configuration dictionary
-            save_modules: Whether to save individual module checkpoints
-        """
+        """save ECLIPSE checkpoint."""
         checkpoint = {
             "model_state_dict": self.state_dict(),
             "config": config or {},
@@ -475,7 +406,7 @@ class ECLIPSE(nn.Module):
         torch.save(checkpoint, path)
 
         if save_modules:
-            # Save individual modules
+            # save individual modules
             import os
             base_dir = os.path.dirname(path)
             self.ecdna_former.save_pretrained(

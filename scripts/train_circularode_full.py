@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 """
-Train the full CircularODE model for ecDNA copy number dynamics.
+train the full CircularODE model for ecDNA copy number dynamics.
 
 Unlike train_circularode.py (which uses a simplified GRU-based model),
 this trains the actual Physics-Informed Neural SDE from
 src/models/circular_ode/model.py, which includes:
-  - DriftNetwork with physics-informed fitness landscape
-  - DiffusionNetwork with segregation-scaled noise
-  - TreatmentEncoder with category/dose/duration encoding
-  - SegregationPhysics constraints (binomial variance)
-  - Euler-Maruyama SDE solver (fallback without torchsde)
-
+- DriftNetwork with physics-informed fitness landscape
+- DiffusionNetwork with segregation-scaled noise
+- TreatmentEncoder with category/dose/duration encoding
+- SegregationPhysics constraints (binomial variance)
+- Euler-Maruyama SDE solver (fallback without torchsde)
 Data: Reuses data/ecdna_trajectories/parsed_trajectories.csv
-      (500 trajectories, 50 timepoints each)
+(500 trajectories, 50 timepoints each)
 """
 
 import sys
@@ -35,7 +34,7 @@ from src.models.circular_ode.treatment import TreatmentEncoder
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Treatment ID mapping: trajectory data uses int IDs (0-3),
+# treatment ID mapping: trajectory data uses int IDs (0-3),
 # TreatmentEncoder expects category indices from TREATMENT_CATEGORIES
 TREATMENT_ID_TO_CATEGORY = {
     0: TreatmentEncoder.TREATMENT_CATEGORIES["targeted"],     # 0
@@ -47,23 +46,22 @@ TREATMENT_ID_TO_CATEGORY = {
 
 class FullTrajectoryDataset(Dataset):
     """
-    Dataset that provides full trajectories for the SDE model.
+    dataset that provides full trajectories for the SDE model.
 
     Data is normalized for numerical stability:
-      - Time is scaled to [0, 1]
-      - Copy numbers are transformed via log1p
-
+    - Time is scaled to [0, 1]
+    - Copy numbers are transformed via log1p
     Each sample is one trajectory:
-      - initial_state: [3] (log1p(CN), 0.0, 1.0)
-      - time_points: [num_times] scaled to [0, 1]
-      - copy_numbers: [num_times] log1p-transformed
-      - treatment_category: int
+    - initial_state: [3] (log1p(CN), 0.0, 1.0)
+    - time_points: [num_times] scaled to [0, 1]
+    - copy_numbers: [num_times] log1p-transformed
+    - treatment_category: int
     """
 
     def __init__(self, df: pd.DataFrame):
         self.trajectories = []
 
-        # Compute normalization constants
+        # compute normalization constants
         all_times = df['time'].values
         self.time_max = float(all_times.max())
 
@@ -73,16 +71,16 @@ class FullTrajectoryDataset(Dataset):
             raw_times = group['time'].values.astype(np.float32)
             treatment_id = int(group['treatment_id'].iloc[0])
 
-            # Normalize time to [0, 1]
+            # normalize time to [0, 1]
             times = raw_times / self.time_max
 
-            # Transform CN via log1p for stability
+            # transform CN via log1p for stability
             cns = np.log1p(np.maximum(raw_cns, 0.0)).astype(np.float32)
 
-            # Initial state: [log1p(CN), 0.0, 1.0]
+            # initial state: [log1p(CN), 0.0, 1.0]
             initial_state = np.array([cns[0], 0.0, 1.0], dtype=np.float32)
 
-            # Map treatment int to TreatmentEncoder category
+            # map treatment int to TreatmentEncoder category
             category = TREATMENT_ID_TO_CATEGORY.get(treatment_id, 5)
 
             self.trajectories.append({
@@ -140,7 +138,7 @@ def train_epoch(model, dataloader, optimizer, device, physics_weight=0.1):
 
         treatment_info = {'categories': treatment_cats}
 
-        # Forward: SDE solver produces trajectory in log1p space
+        # forward: SDE solver produces trajectory in log1p space
         predictions = model(
             initial_state=initial_state,
             time_points=time_points,
@@ -149,12 +147,12 @@ def train_epoch(model, dataloader, optimizer, device, physics_weight=0.1):
             return_trajectories=True,
         )
 
-        # Loss on log1p-transformed CN (model.get_loss uses log1p internally,
+        # loss on log1p-transformed CN (model.get_loss uses log1p internally,
         # but since data is already log1p'd, use direct MSE here)
         pred_cn = predictions['copy_number_trajectory']
         data_loss = torch.nn.functional.mse_loss(pred_cn, copy_numbers)
 
-        # Physics constraint: segregation variance
+        # physics constraint: segregation variance
         physics_loss = torch.tensor(0.0, device=device)
         if model.use_physics_constraints:
             traj_var = pred_cn.var(dim=1)
@@ -213,7 +211,7 @@ def validate(model, dataloader, device):
             loss = torch.nn.functional.mse_loss(pred_cn, copy_numbers)
             total_loss += loss.item()
 
-            # Convert back to raw scale for metrics: expm1(log1p_pred)
+            # convert back to raw scale for metrics: expm1(log1p_pred)
             pred_raw = torch.expm1(pred_cn.clamp(max=20)).cpu().numpy()
             true_raw = raw_copy_numbers.cpu().numpy()
             all_pred_cn.append(pred_raw.flatten())
@@ -255,7 +253,6 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.info(f"Using device: {device}")
 
-    # ── Load Data ────────────────────────────────────────────────────────
     data_dir = Path("data/ecdna_trajectories")
     cache_file = data_dir / "parsed_trajectories.csv"
 
@@ -269,10 +266,10 @@ def main():
     n_trajectories = df['trajectory_id'].nunique()
     logger.info(f"Loaded {n_trajectories} trajectories, {len(df)} total rows")
 
-    # ── Create Dataset ───────────────────────────────────────────────────
+    # create Dataset
     dataset = FullTrajectoryDataset(df)
 
-    # Train/val split (80/20 by trajectory)
+    # train/val split (80/20 by trajectory)
     n_total = len(dataset)
     indices = np.random.RandomState(42).permutation(n_total)
     n_train = int(0.8 * n_total)
@@ -292,7 +289,6 @@ def main():
     )
     logger.info(f"Train: {len(train_dataset)} trajectories, Val: {len(val_dataset)} trajectories")
 
-    # ── Create Model ─────────────────────────────────────────────────────
     model_config = {
         'latent_dim': args.latent_dim,
         'treatment_dim': 16,
@@ -307,11 +303,11 @@ def main():
     n_params = sum(p.numel() for p in model.parameters())
     logger.info(f"Full CircularODE model: {n_params:,} parameters")
 
-    # ── Optimizer & Scheduler ────────────────────────────────────────────
+    # optimizer & Scheduler
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
 
-    # ── Training Loop ────────────────────────────────────────────────────
+    # training Loop
     output_dir = Path("checkpoints/circularode_full")
     output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -353,7 +349,7 @@ def main():
             f"corr={val_metrics['correlation']:.3f}"
         )
 
-        # Save best model
+        # save best model
         if val_metrics['loss'] < best_val_loss:
             best_val_loss = val_metrics['loss']
             patience_counter = 0
@@ -375,10 +371,9 @@ def main():
                 logger.info(f"Early stopping at epoch {epoch} (patience={args.patience})")
                 break
 
-    # ── Save Training History ────────────────────────────────────────────
+    # save training History
     pd.DataFrame(history).to_csv(output_dir / "training_history.csv", index=False)
 
-    # ── Final Evaluation ─────────────────────────────────────────────────
     logger.info(f"\n{'='*60}")
     logger.info("FINAL EVALUATION (best checkpoint)")
     logger.info(f"{'='*60}")
@@ -392,13 +387,12 @@ def main():
     logger.info(f"  Correlation: {final_metrics['correlation']:.4f}")
     logger.info(f"  Best epoch:  {checkpoint['epoch']}")
 
-    # Compare with simplified model
+    # compare with simplified model
     logger.info("\nComparison with SimpleCircularODE:")
     logger.info(f"  SimpleCircularODE: MSE=0.0141, MAE=0.0685, Corr=0.993")
     logger.info(f"  Full CircularODE:  MSE={final_metrics['mse']:.4f}, "
                 f"MAE={final_metrics['mae']:.4f}, Corr={final_metrics['correlation']:.3f}")
 
-    # Save results
     results = {
         'model': 'CircularODE (full)',
         'best_epoch': int(checkpoint['epoch']),

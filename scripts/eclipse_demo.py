@@ -3,9 +3,9 @@
 ECLIPSE Integration Demo
 
 Demonstrates the full patient stratification pipeline combining all three modules:
-1. ecDNA-Former: Predict ecDNA formation probability
-2. CircularODE: Model treatment dynamics
-3. VulnCausal: Identify therapeutic vulnerabilities
+- ecDNA-Former: Predict ecDNA formation probability
+- circularODE: Model treatment dynamics
+- vulnCausal: Identify therapeutic vulnerabilities
 """
 
 import torch
@@ -64,7 +64,7 @@ class PatientStratification:
         for v in self.vulnerabilities[:5]:
             gene = v.get('gene', 'Unknown')
             effect = v.get('effect', 0)
-            # Handle string or numeric effect
+            # handle string or numeric effect
             try:
                 effect_str = f"{float(effect):>7.3f}"
             except (ValueError, TypeError):
@@ -76,7 +76,7 @@ class PatientStratification:
     def _format_recommendations(self):
         lines = []
         for r in self.recommendations[:4]:
-            # Truncate long recommendations
+            # truncate long recommendations
             r_trunc = r[:70] if len(r) > 70 else r
             lines.append(f"║    • {r_trunc:<72} ║\n")
         return ''.join(lines)
@@ -84,7 +84,7 @@ class PatientStratification:
 
 class ECLIPSE:
     """
-    Unified ECLIPSE Framework for ecDNA Analysis.
+    unified ECLIPSE Framework for ecDNA Analysis.
 
     Integrates three modules:
     - Module 1: ecDNA-Former (formation prediction)
@@ -93,36 +93,28 @@ class ECLIPSE:
     """
 
     def __init__(self, checkpoint_dir: str = "checkpoints", device: str = None):
-        """
-        Initialize ECLIPSE framework.
-
-        Args:
-            checkpoint_dir: Directory containing trained model checkpoints
-            device: Computing device ('cuda' or 'cpu')
-        """
         self.checkpoint_dir = Path(checkpoint_dir)
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
 
         print(f"Initializing ECLIPSE on {self.device}...")
 
-        # Load models
         self._load_models()
 
-        # Load vulnerability database
+        # load vulnerability database
         self._load_vulnerabilities()
 
         print("ECLIPSE initialized successfully!")
 
     def _load_models(self):
         """Load trained model checkpoints."""
-        # For demo, we'll use simplified inference
-        # In production, load actual model weights
+        # for demo, we'll use simplified inference
+        # in production, load actual model weights
 
-        # Module 1: ecDNA-Former feature normalization stats
+        # module 1: ecDNA-Former feature normalization stats
         self.feature_mean = None
         self.feature_std = None
 
-        # Module 2: CircularODE normalization
+        # module 2: CircularODE normalization
         ode_path = self.checkpoint_dir / "circularode" / "best_model.pt"
         if ode_path.exists():
             ode_ckpt = torch.load(ode_path, weights_only=False, map_location=self.device)
@@ -132,7 +124,7 @@ class ECLIPSE:
         else:
             self.cn_mean, self.cn_std = 10.0, 20.0
 
-        # Module 3: VulnCausal results
+        # module 3: VulnCausal results
         print("  Models loaded (using inference mode)")
 
     def _load_vulnerabilities(self):
@@ -142,7 +134,7 @@ class ECLIPSE:
             self.vulnerabilities = pd.read_csv(vuln_path)
             print(f"  Loaded {len(self.vulnerabilities)} validated vulnerabilities")
         else:
-            # Default vulnerabilities
+            # default vulnerabilities
             self.vulnerabilities = pd.DataFrame([
                 {'gene': 'CDK1', 'our_effect': -0.103, 'category': 'Cell cycle', 'literature_support': 'HIGH'},
                 {'gene': 'KIF11', 'our_effect': -0.092, 'category': 'Mitosis', 'literature_support': 'HIGH'},
@@ -152,25 +144,17 @@ class ECLIPSE:
             ])
 
     def predict_ecdna_probability(self, features: np.ndarray) -> float:
-        """
-        Predict ecDNA formation probability.
+        """predict ecDNA formation probability."""
+        # key features for ecDNA prediction (based on trained model)
+        # features 0-20: oncogene CNV (MYC, EGFR, CDK4, etc.)
+        # features 21-40: expression
+        # features 41-60: Hi-C interactions
 
-        Args:
-            features: 112-dimensional feature vector
-
-        Returns:
-            Probability of ecDNA presence (0-1)
-        """
-        # Key features for ecDNA prediction (based on trained model)
-        # Features 0-20: oncogene CNV (MYC, EGFR, CDK4, etc.)
-        # Features 21-40: expression
-        # Features 41-60: Hi-C interactions
-
-        # Simple logistic model based on key features
+        # simple logistic model based on key features
         oncogene_cnv_max = np.max(features[:20]) if len(features) >= 20 else features[0]
         cnv_hic_interaction = features[45] if len(features) > 45 else 0
 
-        # Logistic regression coefficients (from trained model behavior)
+        # logistic regression coefficients (from trained model behavior)
         z = -2.0 + 0.3 * oncogene_cnv_max + 0.5 * cnv_hic_interaction
         prob = 1 / (1 + np.exp(-z))
 
@@ -182,18 +166,8 @@ class ECLIPSE:
         treatment: str,
         n_steps: int = 50,
     ) -> Dict:
-        """
-        Simulate copy number trajectory under treatment.
-
-        Args:
-            initial_cn: Initial copy number
-            treatment: Treatment type
-            n_steps: Number of time steps
-
-        Returns:
-            Trajectory data
-        """
-        # Treatment effects (from trained model)
+        """simulate copy number trajectory under treatment."""
+        # treatment effects (from trained model)
         treatment_effects = {
             'none': {'decay': 0.0, 'resistance': 0.3},
             'targeted': {'decay': 0.03, 'resistance': 0.2},
@@ -203,14 +177,14 @@ class ECLIPSE:
 
         effect = treatment_effects.get(treatment, treatment_effects['none'])
 
-        # Simulate trajectory
+        # simulate trajectory
         cn = initial_cn
         trajectory = [cn]
 
         for _ in range(n_steps - 1):
-            # Decay under treatment
+            # decay under treatment
             cn = cn * (1 - effect['decay'])
-            # Add noise
+            # add noise
             cn = max(1, cn + np.random.normal(0, cn * 0.05))
             trajectory.append(cn)
 
@@ -221,18 +195,10 @@ class ECLIPSE:
         }
 
     def get_vulnerabilities(self, cancer_type: str = None) -> List[Dict]:
-        """
-        Get relevant vulnerabilities for a cancer type.
-
-        Args:
-            cancer_type: Cancer type for filtering
-
-        Returns:
-            List of vulnerability dictionaries
-        """
+        """get relevant vulnerabilities for a cancer type."""
         vulns = self.vulnerabilities.copy()
 
-        # Sort by effect size (most negative = most vulnerable)
+        # sort by effect size (most negative = most vulnerable)
         if 'our_effect' in vulns.columns:
             vulns = vulns.sort_values('our_effect')
 
@@ -267,30 +233,30 @@ class ECLIPSE:
 
         if prob > 0.5:
             recommendations.append(
-                "⚠️  HIGH ecDNA probability - recommend targeted monitoring"
+                "high ecDNA probability - recommend targeted monitoring"
             )
 
-            # Treatment recommendations
+            # treatment recommendations
             if trajectories:
                 best_tx = min(trajectories.items(), key=lambda x: x[1]['final_cn'])
                 recommendations.append(
-                    f"📊 Model predicts best CN reduction with: {best_tx[0]} therapy"
+                    f"best predicted CN reduction with: {best_tx[0]} therapy"
                 )
 
-                # Resistance warning
+                # resistance warning
                 high_resist = [tx for tx, data in trajectories.items()
                                if data['resistance_prob'] > 0.5]
                 if high_resist:
                     recommendations.append(
-                        f"⚡ Elevated resistance risk with: {', '.join(high_resist)}"
+                        f"elevated resistance risk with: {', '.join(high_resist)}"
                     )
 
-            # Vulnerability recommendations
+            # vulnerability recommendations
             validated = [v for v in vulnerabilities if v.get('support') == 'VALIDATED']
             if validated:
                 genes = ', '.join([v['gene'] for v in validated[:2]])
                 recommendations.append(
-                    f"💊 VALIDATED targets (clinical trials): {genes}"
+                    f"validated targets (clinical trials): {genes}"
                 )
 
             high_support = [v for v in vulnerabilities
@@ -298,15 +264,15 @@ class ECLIPSE:
             if high_support:
                 genes = ', '.join([v['gene'] for v in high_support[:3]])
                 recommendations.append(
-                    f"🔬 Additional targets (high evidence): {genes}"
+                    f"additional targets (high evidence): {genes}"
                 )
 
         else:
             recommendations.append(
-                "✓  Low ecDNA probability - standard treatment protocols"
+                "low ecDNA probability - standard treatment protocols"
             )
             recommendations.append(
-                "📋 Continue routine genomic monitoring"
+                "continue routine genomic monitoring"
             )
 
         return recommendations
@@ -317,25 +283,15 @@ class ECLIPSE:
         features: np.ndarray,
         cancer_type: str = None,
     ) -> PatientStratification:
-        """
-        Full patient stratification pipeline.
-
-        Args:
-            patient_id: Patient identifier
-            features: 112-dimensional feature vector
-            cancer_type: Cancer type for vulnerability filtering
-
-        Returns:
-            PatientStratification object with full analysis
-        """
-        # Module 1: Predict ecDNA probability
+        """full patient stratification pipeline."""
+        # module 1: Predict ecDNA probability
         ecdna_prob = self.predict_ecdna_probability(features)
         risk_level = self._classify_risk(ecdna_prob)
 
-        # Module 2: Simulate treatment trajectories (if at risk)
+        # module 2: Simulate treatment trajectories (if at risk)
         trajectories = {}
         if ecdna_prob > 0.3:
-            # Estimate initial CN from features
+            # estimate initial CN from features
             initial_cn = max(5, features[2] * 10) if len(features) > 2 else 30
 
             for treatment in ['none', 'targeted', 'chemo', 'maintenance']:
@@ -344,10 +300,9 @@ class ECLIPSE:
                     treatment=treatment,
                 )
 
-        # Module 3: Get vulnerabilities
+        # module 3: Get vulnerabilities
         vulnerabilities = self.get_vulnerabilities(cancer_type)
 
-        # Generate recommendations
         recommendations = self._generate_recommendations(
             ecdna_prob, trajectories, vulnerabilities
         )
@@ -368,10 +323,10 @@ def demo():
     print("                    ECLIPSE FRAMEWORK DEMONSTRATION")
     print("=" * 80)
 
-    # Initialize ECLIPSE
+    # initialize ECLIPSE
     eclipse = ECLIPSE()
 
-    # Demo Case 1: High-risk patient (MYC amplification)
+    # demo Case 1: High-risk patient (MYC amplification)
     print("\n" + "-" * 80)
     print("CASE 1: High-risk patient with MYC amplification")
     print("-" * 80)
@@ -389,7 +344,7 @@ def demo():
     )
     print(result1)
 
-    # Demo Case 2: Low-risk patient (no amplification)
+    # demo Case 2: Low-risk patient (no amplification)
     print("\n" + "-" * 80)
     print("CASE 2: Low-risk patient without amplification")
     print("-" * 80)
@@ -407,7 +362,7 @@ def demo():
     )
     print(result2)
 
-    # Demo Case 3: Moderate-risk patient
+    # demo Case 3: Moderate-risk patient
     print("\n" + "-" * 80)
     print("CASE 3: Moderate-risk patient with EGFR amplification")
     print("-" * 80)

@@ -1,5 +1,5 @@
 """
-Causal Representation Learning for VulnCausal.
+causal Representation Learning for VulnCausal.
 
 Learns disentangled representations that separate:
 - ecDNA status
@@ -18,11 +18,10 @@ from typing import Optional, Dict, Tuple, List
 
 class CausalRepresentationLearner(nn.Module):
     """
-    Variational autoencoder for causal representation learning.
+    variational autoencoder for causal representation learning.
 
     Learns disentangled latent factors that correspond to
     biologically meaningful sources of variation.
-
     Key innovation: Independence penalty to encourage disentanglement.
     """
 
@@ -36,18 +35,6 @@ class CausalRepresentationLearner(nn.Module):
         beta: float = 4.0,
         independence_penalty: float = 1.0,
     ):
-        """
-        Initialize causal representation learner.
-
-        Args:
-            input_dim: Input dimension (expression + other features)
-            latent_factors: Names of latent factors to learn
-            factor_dim: Dimension per factor
-            hidden_dim: Hidden layer dimension
-            num_layers: Number of encoder/decoder layers
-            beta: Beta-VAE weight
-            independence_penalty: Weight for independence loss
-        """
         super().__init__()
 
         if latent_factors is None:
@@ -63,7 +50,6 @@ class CausalRepresentationLearner(nn.Module):
         self.beta = beta
         self.independence_penalty = independence_penalty
 
-        # Encoder
         encoder_layers = []
         in_dim = input_dim
         for i in range(num_layers):
@@ -76,11 +62,10 @@ class CausalRepresentationLearner(nn.Module):
             in_dim = out_dim
         self.encoder = nn.Sequential(*encoder_layers)
 
-        # Latent parameters (mean and logvar for each factor)
+        # latent parameters (mean and logvar for each factor)
         self.fc_mu = nn.Linear(hidden_dim, self.latent_dim)
         self.fc_logvar = nn.Linear(hidden_dim, self.latent_dim)
 
-        # Decoder
         decoder_layers = []
         in_dim = self.latent_dim
         for i in range(num_layers):
@@ -103,7 +88,7 @@ class CausalRepresentationLearner(nn.Module):
             for name in latent_factors
         })
 
-        # Independence discriminator (for adversarial independence)
+        # independence discriminator (for adversarial independence)
         self.independence_disc = nn.Sequential(
             nn.Linear(self.latent_dim, hidden_dim),
             nn.ReLU(),
@@ -112,7 +97,7 @@ class CausalRepresentationLearner(nn.Module):
 
     def encode(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Encode input to latent distribution parameters.
+        encode input to latent distribution parameters.
 
         Args:
             x: Input features [batch, input_dim]
@@ -127,7 +112,7 @@ class CausalRepresentationLearner(nn.Module):
 
     def reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
         """
-        Reparameterization trick for sampling.
+        reparameterization trick for sampling.
 
         Args:
             mu: Mean [batch, latent_dim]
@@ -142,7 +127,7 @@ class CausalRepresentationLearner(nn.Module):
 
     def decode(self, z: torch.Tensor) -> torch.Tensor:
         """
-        Decode latent to reconstruction.
+        decode latent to reconstruction.
 
         Args:
             z: Latent representation [batch, latent_dim]
@@ -158,22 +143,17 @@ class CausalRepresentationLearner(nn.Module):
         return_factors: bool = True,
     ) -> Dict[str, torch.Tensor]:
         """
-        Forward pass through VAE.
+        forward pass through VAE.
 
         Args:
             x: Input features [batch, input_dim]
             return_factors: Whether to return individual factors
-
-        Returns:
-            Dictionary with reconstruction, latent, and optionally factors
         """
-        # Encode
         mu, logvar = self.encode(x)
 
-        # Sample
+        # sample
         z = self.reparameterize(mu, logvar)
 
-        # Decode
         recon = self.decode(z)
 
         results = {
@@ -184,7 +164,7 @@ class CausalRepresentationLearner(nn.Module):
         }
 
         if return_factors:
-            # Split latent into factors
+            # split latent into factors
             factors = {}
             for i, name in enumerate(self.latent_factors):
                 start = i * self.factor_dim
@@ -196,7 +176,7 @@ class CausalRepresentationLearner(nn.Module):
 
     def get_factor(self, z: torch.Tensor, factor_name: str) -> torch.Tensor:
         """
-        Extract a specific factor from latent representation.
+        extract a specific factor from latent representation.
 
         Args:
             z: Full latent [batch, latent_dim]
@@ -212,43 +192,39 @@ class CausalRepresentationLearner(nn.Module):
 
     def independence_loss(self, z: torch.Tensor) -> torch.Tensor:
         """
-        Compute independence penalty between factors.
+        compute independence penalty between factors.
 
         Uses total correlation as measure of dependency.
 
         Args:
             z: Latent representation [batch, latent_dim]
-
-        Returns:
-            Independence loss (lower = more independent)
         """
         batch_size = z.shape[0]
 
-        # Split into factors
+        # split into factors
         factors = []
         for i in range(self.num_factors):
             start = i * self.factor_dim
             end = (i + 1) * self.factor_dim
             factors.append(z[:, start:end])
 
-        # Compute pairwise correlations
+        # compute pairwise correlations
         total_corr = 0
         num_pairs = 0
 
         for i in range(self.num_factors):
             for j in range(i + 1, self.num_factors):
-                # Correlation between factors
+                # correlation between factors
                 f_i = factors[i]
                 f_j = factors[j]
 
-                # Center
                 f_i_centered = f_i - f_i.mean(dim=0)
                 f_j_centered = f_j - f_j.mean(dim=0)
 
-                # Cross-covariance
+                # cross-covariance
                 cov = torch.mm(f_i_centered.t(), f_j_centered) / batch_size
 
-                # Frobenius norm as correlation measure
+                # frobenius norm as correlation measure
                 total_corr += torch.norm(cov, p='fro')
                 num_pairs += 1
 
@@ -260,20 +236,10 @@ class CausalRepresentationLearner(nn.Module):
         outputs: Dict[str, torch.Tensor],
         factor_labels: Optional[Dict[str, torch.Tensor]] = None,
     ) -> Dict[str, torch.Tensor]:
-        """
-        Compute training loss.
-
-        Args:
-            x: Original input
-            outputs: Forward pass outputs
-            factor_labels: Optional supervision for factors
-
-        Returns:
-            Dictionary of loss components
-        """
+        """compute training loss."""
         losses = {}
 
-        # Reconstruction loss
+        # reconstruction loss
         recon = outputs["reconstruction"]
         losses["recon_loss"] = F.mse_loss(recon, x)
 
@@ -283,11 +249,11 @@ class CausalRepresentationLearner(nn.Module):
         kl = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)
         losses["kl_loss"] = self.beta * kl.mean()
 
-        # Independence loss
+        # independence loss
         z = outputs["latent"]
         losses["independence_loss"] = self.independence_penalty * self.independence_loss(z)
 
-        # Factor supervision (if available)
+        # factor supervision (if available)
         if factor_labels is not None:
             for name, label in factor_labels.items():
                 if name in outputs.get("factors", {}):
@@ -297,7 +263,6 @@ class CausalRepresentationLearner(nn.Module):
                         pred.squeeze(-1), label.float()
                     )
 
-        # Total
         losses["total_loss"] = sum(losses.values())
 
         return losses
@@ -305,7 +270,7 @@ class CausalRepresentationLearner(nn.Module):
 
 class FactorPredictor(nn.Module):
     """
-    Predicts biological factors from expression data.
+    predicts biological factors from expression data.
 
     Used for weak supervision of causal representation learning.
     """
@@ -315,13 +280,6 @@ class FactorPredictor(nn.Module):
         input_dim: int,
         hidden_dim: int = 128,
     ):
-        """
-        Initialize factor predictor.
-
-        Args:
-            input_dim: Input dimension
-            hidden_dim: Hidden dimension
-        """
         super().__init__()
 
         self.predictors = nn.ModuleDict({

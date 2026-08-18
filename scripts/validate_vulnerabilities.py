@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Literature validation of Module 3 vulnerability hits.
+literature validation of Module 3 vulnerability hits.
 
 Cross-references our discovered vulnerabilities with published literature
 to validate biological plausibility.
@@ -9,7 +9,7 @@ to validate biological plausibility.
 import pandas as pd
 from pathlib import Path
 
-# Literature validation table for our top vulnerability hits
+# literature validation table for our top vulnerability hits
 LITERATURE_VALIDATION = [
     {
         'gene': 'CDK1',
@@ -95,7 +95,7 @@ LITERATURE_VALIDATION = [
     },
     {
         'gene': 'RPL23',
-        'our_effect': 0.082,  # From learned model
+        'our_effect': 0.082,  # from learned model
         'category': 'Ribosome',
         'literature_support': 'HIGH',
         'mechanism': 'Ribosomal protein - translation and MDM2/p53 regulation',
@@ -135,7 +135,7 @@ LITERATURE_VALIDATION = [
         ],
         'pmid': 'Nature 2024: 10.1038/s41586-024-07802-5',
     },
-    # Additional validated hits from differential analysis
+    # additional validated hits from differential analysis
     {
         'gene': 'SGO1',
         'our_effect': -0.15,
@@ -274,7 +274,7 @@ def create_validation_report():
     print("   - BCL2L1 amplification common in solid tumors")
     print("")
 
-    # Save as CSV
+    # save as CSV
     df = pd.DataFrame(LITERATURE_VALIDATION)
     output_dir = Path("data/vulnerabilities")
     output_dir.mkdir(exist_ok=True)

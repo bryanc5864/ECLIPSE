@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-Validate VulnCausal hits against GDSC drug sensitivity data.
+validate VulnCausal hits against GDSC drug sensitivity data.
 
 Tests whether ecDNA+ cell lines are more sensitive to drugs targeting
 our identified vulnerability genes.
-
 Data source: Genomics of Drug Sensitivity in Cancer (GDSC)
 https://www.cancerrxgene.org/
 """
@@ -16,7 +15,7 @@ from scipy import stats
 import warnings
 warnings.filterwarnings('ignore')
 
-# Our vulnerability hits and drugs that target them
+# our vulnerability hits and drugs that target them
 VULNERABILITY_DRUG_MAPPING = {
     'CDK1': {
         'drugs': ['Dinaciclib', 'RO-3306', 'Palbociclib', 'Ribociclib'],
@@ -57,7 +56,7 @@ VULNERABILITY_DRUG_MAPPING = {
 
 # GDSC drugs available (subset that maps to our targets)
 # IC50 values in uM (lower = more sensitive)
-# These are representative values based on GDSC2 data patterns
+# these are representative values based on GDSC2 data patterns
 GDSC_DRUG_DATA = {
     'Dinaciclib': {
         'target': 'CDK1/2/5/9',
@@ -98,7 +97,7 @@ def load_ecdna_status():
 
     if cytocell_path.exists():
         df = pd.read_csv(cytocell_path)
-        # Create mapping of cell line to ecDNA status
+        # create mapping of cell line to ecDNA status
         ecdna_status = {}
         for _, row in df.iterrows():
             cell_line = row.get('DepMap_ID') or row.get('cell_line')
@@ -108,7 +107,7 @@ def load_ecdna_status():
                 ecdna_status[cell_line] = is_ecdna_pos
         return ecdna_status
     else:
-        # Return known ecDNA+ cell lines from literature
+        # return known ecDNA+ cell lines from literature
         return {
             'COLO320DM': True,  # MYC ecDNA
             'PC3': True,        # MYC ecDNA
@@ -126,38 +125,37 @@ def load_ecdna_status():
 
 def simulate_gdsc_sensitivity(drug_name, ecdna_status, n_cell_lines=100):
     """
-    Simulate GDSC-like sensitivity data.
+    simulate GDSC-like sensitivity data.
 
     In real validation, download from https://www.cancerrxgene.org/downloads
-
     This simulation is based on the hypothesis that ecDNA+ cells
     are more sensitive to drugs targeting our vulnerability genes.
     """
     np.random.seed(42)
 
-    # Base IC50 distribution (log-normal)
+    # base IC50 distribution (log-normal)
     base_ln_ic50 = np.random.normal(1.0, 0.8, n_cell_lines)
 
     # ecDNA+ cells are more sensitive (lower IC50) for relevant drugs
     ecdna_effect = {
         'Dinaciclib': -0.5,      # CDK inhibitor - strong effect
         'AZD7762': -0.7,         # CHK1 inhibitor - very strong (validated)
-        'Bortezomib': -0.4,      # Proteasome - moderate effect
+        'Bortezomib': -0.4,      # proteasome - moderate effect
         'Navitoclax': -0.3,      # BCL-XL - moderate effect
-        'Gemcitabine': -0.2,     # Replication - mild effect
+        'Gemcitabine': -0.2,     # replication - mild effect
         'Palbociclib': -0.3,     # CDK4/6 - moderate effect
     }
 
     effect = ecdna_effect.get(drug_name, 0)
 
-    # Assign ecDNA status randomly (matching observed ~10% prevalence)
+    # assign ecDNA status randomly (matching observed ~10% prevalence)
     is_ecdna = np.random.random(n_cell_lines) < 0.10
 
-    # Apply ecDNA effect
+    # apply ecDNA effect
     ln_ic50 = base_ln_ic50.copy()
-    ln_ic50[is_ecdna] += effect  # Lower IC50 for ecDNA+ (more sensitive)
+    ln_ic50[is_ecdna] += effect  # lower IC50 for ecDNA+ (more sensitive)
 
-    # Convert to IC50
+    # convert to IC50
     ic50 = np.exp(ln_ic50)
 
     return pd.DataFrame({
@@ -187,19 +185,19 @@ def validate_drug_sensitivity():
         print(f"Pathway: {drug_info['pathway']}")
         print(f"{'-'*60}")
 
-        # Get sensitivity data (simulated for demo, real data from GDSC)
+        # get sensitivity data (simulated for demo, real data from GDSC)
         df = simulate_gdsc_sensitivity(drug_name, None)
 
-        # Split by ecDNA status
+        # split by ecDNA status
         ecdna_pos = df[df['is_ecdna']]['ln_IC50']
         ecdna_neg = df[~df['is_ecdna']]['ln_IC50']
 
-        # Statistical test
+        # statistical test
         stat, pval = stats.mannwhitneyu(ecdna_pos, ecdna_neg, alternative='less')
 
-        # Effect size (difference in means)
+        # effect size (difference in means)
         mean_diff = ecdna_neg.mean() - ecdna_pos.mean()
-        selectivity_ratio = np.exp(mean_diff)  # Fold difference in IC50
+        selectivity_ratio = np.exp(mean_diff)  # fold difference in IC50
 
         # Cohen's d
         pooled_std = np.sqrt((ecdna_pos.std()**2 + ecdna_neg.std()**2) / 2)
@@ -231,7 +229,6 @@ def validate_drug_sensitivity():
             'significant': pval < 0.05,
         })
 
-    # Summary
     print("\n" + "=" * 80)
     print("VALIDATION SUMMARY")
     print("=" * 80)
@@ -248,7 +245,7 @@ def validate_drug_sensitivity():
     print(f"\nSignificant associations: {n_sig}/{len(df_results)}")
     print(f"Mean selectivity ratio: {df_results['selectivity_ratio'].mean():.2f}x")
 
-    # Interpretation
+    # interpretation
     print("\n" + "=" * 80)
     print("INTERPRETATION")
     print("=" * 80)
@@ -274,7 +271,6 @@ https://www.cancerrxgene.org/downloads
 Then cross-reference with CytoCellDB ecDNA status.
 """)
 
-    # Save results
     output_dir = Path("data/validation")
     output_dir.mkdir(exist_ok=True, parents=True)
     df_results.to_csv(output_dir / "vulncausal_gdsc_validation.csv", index=False)

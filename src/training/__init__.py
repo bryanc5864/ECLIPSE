@@ -1,5 +1,5 @@
 """
-Training Infrastructure for ECLIPSE.
+training Infrastructure for ECLIPSE.
 
 Provides training loops, loss functions, and utilities for:
 - Module 1 (ecDNA-Former): Formation prediction training

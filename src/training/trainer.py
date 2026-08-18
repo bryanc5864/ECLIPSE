@@ -1,5 +1,5 @@
 """
-Trainers for ECLIPSE modules.
+trainers for ECLIPSE modules.
 
 Provides training loops with:
 - Automatic mixed precision
@@ -61,24 +61,6 @@ class BaseTrainer(ABC):
         use_wandb: bool = False,
         classification_threshold: float = 0.35,
     ):
-        """
-        Initialize trainer.
-
-        Args:
-            model: Model to train
-            train_loader: Training data loader
-            val_loader: Validation data loader
-            optimizer: Optimizer (created if None)
-            scheduler: Learning rate scheduler
-            device: Device to train on
-            mixed_precision: Use automatic mixed precision
-            gradient_accumulation_steps: Steps for gradient accumulation
-            max_grad_norm: Maximum gradient norm for clipping
-            checkpoint_dir: Directory for checkpoints
-            log_interval: Steps between logging
-            use_wandb: Use Weights & Biases logging
-            classification_threshold: Threshold for binary classification (lower for imbalanced data)
-        """
         self.model = model.to(device)
         self.train_loader = train_loader
         self.val_loader = val_loader
@@ -92,23 +74,20 @@ class BaseTrainer(ABC):
         self.use_wandb = use_wandb
         self.classification_threshold = classification_threshold
 
-        # Optimizer
         if optimizer is None:
-            self.optimizer = optim.AdamW(model.parameters(), lr=1e-5, weight_decay=0.01)  # Lower LR for stability
+            self.optimizer = optim.AdamW(model.parameters(), lr=1e-5, weight_decay=0.01)  # lower LR for stability
         else:
             self.optimizer = optimizer
 
         self.scheduler = scheduler
 
-        # Mixed precision scaler
         self.scaler = torch.amp.GradScaler('cuda') if mixed_precision else None
 
-        # Training state
+        # training state
         self.global_step = 0
         self.epoch = 0
         self.best_val_loss = float('inf')
 
-        # WandB
         if use_wandb:
             try:
                 import wandb
@@ -122,10 +101,10 @@ class BaseTrainer(ABC):
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.train_start_time = None
 
-        # Initialize CSV files
+        # initialize CSV files
         self._init_csv_logging()
 
-        # Store predictions/labels for validation metrics
+        # store predictions/labels for validation metrics
         self.val_predictions = []
         self.val_labels = []
         self.val_probabilities = []
@@ -134,7 +113,6 @@ class BaseTrainer(ABC):
         """Initialize CSV logging files."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        # Batch log file
         self.batch_log_file = self.log_dir / f"batch_log_{timestamp}.csv"
         self.batch_csv_headers = [
             "timestamp", "epoch", "batch", "global_step",
@@ -147,7 +125,7 @@ class BaseTrainer(ABC):
             writer = csv.writer(f)
             writer.writerow(self.batch_csv_headers)
 
-        # Epoch validation log file
+        # epoch validation log file
         self.val_log_file = self.log_dir / f"validation_log_{timestamp}.csv"
         self.val_csv_headers = [
             "timestamp", "epoch", "global_step",
@@ -163,7 +141,6 @@ class BaseTrainer(ABC):
             writer = csv.writer(f)
             writer.writerow(self.val_csv_headers)
 
-        # Final evaluation log file
         self.final_log_file = self.log_dir / f"final_evaluation_{timestamp}.csv"
 
         logger.info(f"CSV logs initialized at {self.log_dir}")
@@ -178,15 +155,15 @@ class BaseTrainer(ABC):
         batch_time: float,
     ):
         """Log batch metrics to CSV."""
-        # Get GPU memory if available
+        # get GPU memory if available
         gpu_memory = 0
         if torch.cuda.is_available():
             gpu_memory = torch.cuda.memory_allocated() / 1024 / 1024
 
-        # Get learning rate
+        # get learning rate
         lr = self.optimizer.param_groups[0]['lr']
 
-        # Extract loss components
+        # extract loss components
         loss_components = []
         for k, v in losses.items():
             if k != "total_loss":
@@ -233,10 +210,9 @@ class BaseTrainer(ABC):
         self.optimizer.zero_grad()
 
         for batch_idx, batch in enumerate(pbar):
-            # Move batch to device
             batch = self._move_to_device(batch)
 
-            # Forward pass with mixed precision
+            # forward pass with mixed precision
             if self.mixed_precision:
                 with torch.amp.autocast('cuda'):
                     losses = self.compute_loss(batch)
@@ -245,18 +221,18 @@ class BaseTrainer(ABC):
                 losses = self.compute_loss(batch)
                 loss = losses["total_loss"] / self.gradient_accumulation_steps
 
-            # Backward pass
+            # backward pass
             if self.scaler:
                 self.scaler.scale(loss).backward()
             else:
                 loss.backward()
 
-            # Gradient accumulation
+            # gradient accumulation
             grad_norm = 0.0
             if (batch_idx + 1) % self.gradient_accumulation_steps == 0:
                 if self.scaler:
                     self.scaler.unscale_(self.optimizer)
-                    # Compute gradient norm AFTER unscaling (before clipping)
+                    # compute gradient norm AFTER unscaling (before clipping)
                     for p in self.model.parameters():
                         if p.grad is not None:
                             grad_norm += p.grad.data.norm(2).item() ** 2
@@ -265,7 +241,7 @@ class BaseTrainer(ABC):
                     self.scaler.step(self.optimizer)
                     self.scaler.update()
                 else:
-                    # Compute gradient norm before clipping
+                    # compute gradient norm before clipping
                     for p in self.model.parameters():
                         if p.grad is not None:
                             grad_norm += p.grad.data.norm(2).item() ** 2
@@ -282,10 +258,10 @@ class BaseTrainer(ABC):
             total_loss += losses["total_loss"].item()
             num_batches += 1
 
-            # Batch timing
+            # batch timing
             batch_time = time.time() - batch_start_time
 
-            # Update progress bar
+            # update progress bar
             pbar.set_postfix({
                 "loss": f"{losses['total_loss'].item():.4f}",
                 "grad": f"{grad_norm:.2f}",
@@ -324,7 +300,7 @@ class BaseTrainer(ABC):
         all_loss_values = []
         num_batches = 0
 
-        # Collect predictions and labels
+        # collect predictions and labels
         all_predictions = []
         all_labels = []
         all_probabilities = []
@@ -333,7 +309,7 @@ class BaseTrainer(ABC):
             batch = self._move_to_device(batch)
             losses = self.compute_loss(batch)
 
-            # Get predictions via overridable method
+            # get predictions via overridable method
             probs, labels = self._get_validation_predictions(batch)
             if probs is not None:
                 all_probabilities.extend(probs.flatten())
@@ -351,7 +327,7 @@ class BaseTrainer(ABC):
 
         avg_losses = {f"val_{k}": v / num_batches for k, v in all_losses.items()}
 
-        # Compute comprehensive metrics (10+)
+        # compute comprehensive metrics (10+)
         metrics = self._compute_validation_metrics(
             predictions=all_predictions,
             labels=all_labels,
@@ -360,21 +336,16 @@ class BaseTrainer(ABC):
         )
         metrics.update(avg_losses)
 
-        # Log to CSV
         self._log_validation_to_csv(metrics)
 
-        # Log to console/wandb
+        # log to console/wandb
         self._log_metrics(metrics)
 
         return metrics
 
     def _get_validation_predictions(self, batch: Dict[str, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Get predictions and labels for validation metrics.
-        Override in subclass for model-specific logic.
-        Returns (probabilities, labels) as numpy arrays, or (None, None) if not applicable.
-        """
-        # Default: no predictions (subclasses should override)
+        """get predictions and labels for validation metrics. Override in subclass for model-specific logic. Returns (probabilities, labels) as numpy arrays, or (None, None) if not applicable."""
+        # default: no predictions (subclasses should override)
         return None, None
 
     def _compute_validation_metrics(
@@ -395,38 +366,32 @@ class BaseTrainer(ABC):
         probabilities = np.array(probabilities)
         loss_values = np.array(loss_values)
 
-        # Loss statistics
+        # loss statistics
         metrics["val_loss_mean"] = float(np.mean(loss_values))
         metrics["val_loss_std"] = float(np.std(loss_values))
 
-        # Only compute classification metrics if we have both classes
+        # only compute classification metrics if we have both classes
         if len(np.unique(labels)) < 2:
             logger.warning("Only one class in validation set, skipping some metrics")
             return metrics
 
         try:
-            # 1. AUROC
             metrics["auroc"] = float(roc_auc_score(labels, probabilities))
 
-            # 2. AUPRC
             metrics["auprc"] = float(average_precision_score(labels, probabilities))
 
-            # 3. F1 Score
             metrics["f1_score"] = float(f1_score(labels, predictions, zero_division=0))
 
-            # 4. Precision
             metrics["precision"] = float(precision_score(labels, predictions, zero_division=0))
 
-            # 5. Recall (Sensitivity/TPR)
+            # recall (Sensitivity/TPR)
             metrics["recall"] = float(recall_score(labels, predictions, zero_division=0))
 
-            # 6. Accuracy
             metrics["accuracy"] = float(accuracy_score(labels, predictions))
 
-            # 7. Balanced Accuracy
             metrics["balanced_accuracy"] = float(balanced_accuracy_score(labels, predictions))
 
-            # 8. Matthews Correlation Coefficient
+            # matthews Correlation Coefficient
             metrics["mcc"] = float(matthews_corrcoef(labels, predictions))
 
             # 9-12. Confusion matrix derived metrics
@@ -436,22 +401,21 @@ class BaseTrainer(ABC):
             metrics["tn"] = int(tn)
             metrics["fn"] = int(fn)
 
-            # 10. Specificity (TNR)
+            # specificity (TNR)
             metrics["specificity"] = float(tn / (tn + fp)) if (tn + fp) > 0 else 0.0
 
-            # 11. Negative Predictive Value
+            # negative Predictive Value
             metrics["npv"] = float(tn / (tn + fn)) if (tn + fn) > 0 else 0.0
 
-            # 12. False Positive Rate
+            # false Positive Rate
             metrics["fpr"] = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
 
-            # 13. False Negative Rate
+            # false Negative Rate
             metrics["fnr"] = float(fn / (fn + tp)) if (fn + tp) > 0 else 0.0
 
-            # 14. Brier Score
             metrics["brier_score"] = float(np.mean((probabilities - labels) ** 2))
 
-            # 15. Calibration Error (ECE approximation)
+            # calibration Error (ECE approximation)
             try:
                 prob_true, prob_pred = calibration_curve(labels, probabilities, n_bins=10, strategy='uniform')
                 metrics["calibration_error"] = float(np.mean(np.abs(prob_true - prob_pred)))
@@ -503,16 +467,7 @@ class BaseTrainer(ABC):
         num_epochs: int,
         early_stopping_patience: int = 5,
     ) -> Dict[str, List[float]]:
-        """
-        Full training loop.
-
-        Args:
-            num_epochs: Number of epochs
-            early_stopping_patience: Patience for early stopping
-
-        Returns:
-            Training history
-        """
+        """full training loop."""
         history = {"train_loss": [], "val_loss": [], "metrics": []}
         patience_counter = 0
         self.train_start_time = time.time()
@@ -524,12 +479,10 @@ class BaseTrainer(ABC):
         for epoch in range(num_epochs):
             self.epoch = epoch
 
-            # Train
             train_metrics = self.train_epoch()
             history["train_loss"].append(train_metrics["train_loss"])
             self.last_train_loss = train_metrics["train_loss"]
 
-            # Validate
             val_metrics = self.validate()
             history["metrics"].append(val_metrics)
 
@@ -537,7 +490,7 @@ class BaseTrainer(ABC):
             if val_loss_key in val_metrics:
                 history["val_loss"].append(val_metrics[val_loss_key])
 
-                # Early stopping
+                # early stopping
                 if val_metrics[val_loss_key] < self.best_val_loss:
                     self.best_val_loss = val_metrics[val_loss_key]
                     self.save_checkpoint("best.pt")
@@ -550,17 +503,15 @@ class BaseTrainer(ABC):
                     logger.info(f"Early stopping at epoch {epoch}")
                     break
 
-            # Save checkpoint
             self.save_checkpoint(f"epoch_{epoch}.pt")
 
-            # Log epoch summary
+            # log epoch summary
             logger.info(
                 f"Epoch {epoch}: train_loss={train_metrics['train_loss']:.4f}, "
                 f"val_loss={val_metrics.get(val_loss_key, 0):.4f}, "
                 f"auroc={val_metrics.get('auroc', 0):.4f}"
             )
 
-        # Final evaluation with 20+ metrics
         final_metrics = self.final_evaluation()
         history["final_metrics"] = final_metrics
 
@@ -570,15 +521,12 @@ class BaseTrainer(ABC):
         return history
 
     def final_evaluation(self) -> Dict[str, float]:
-        """
-        Comprehensive final evaluation with 20+ metrics.
-        """
+        """comprehensive final evaluation with 20+ metrics."""
         if self.val_loader is None:
             return {}
 
         logger.info("Running final evaluation...")
 
-        # Load best model
         try:
             self.load_checkpoint("best.pt")
             logger.info("Loaded best checkpoint for final evaluation")
@@ -600,7 +548,7 @@ class BaseTrainer(ABC):
                 losses = self.compute_loss(batch)
                 all_losses.append(losses["total_loss"].item())
 
-                # Get predictions via overridable method
+                # get predictions via overridable method
                 probs, labels = self._get_validation_predictions(batch)
                 if probs is not None:
                     all_probabilities.extend(probs.flatten())
@@ -608,7 +556,6 @@ class BaseTrainer(ABC):
                 if labels is not None:
                     all_labels.extend(labels.flatten())
 
-        # Compute 20+ final metrics
         metrics = self._compute_final_metrics(
             predictions=all_predictions,
             labels=all_labels,
@@ -617,7 +564,7 @@ class BaseTrainer(ABC):
             embeddings=all_embeddings,
         )
 
-        # Save to CSV
+        # save to CSV
         self._save_final_evaluation(metrics)
 
         return metrics
@@ -638,7 +585,6 @@ class BaseTrainer(ABC):
         probabilities = np.array(probabilities)
         losses = np.array(losses)
 
-        # === Loss Metrics (4) ===
         metrics["final_loss_mean"] = float(np.mean(losses))
         metrics["final_loss_std"] = float(np.std(losses))
         metrics["final_loss_min"] = float(np.min(losses))
@@ -648,7 +594,6 @@ class BaseTrainer(ABC):
             return metrics
 
         try:
-            # === Classification Metrics (8) ===
             metrics["final_auroc"] = float(roc_auc_score(labels, probabilities))
             metrics["final_auprc"] = float(average_precision_score(labels, probabilities))
             metrics["final_f1"] = float(f1_score(labels, predictions, zero_division=0))
@@ -658,7 +603,6 @@ class BaseTrainer(ABC):
             metrics["final_balanced_accuracy"] = float(balanced_accuracy_score(labels, predictions))
             metrics["final_mcc"] = float(matthews_corrcoef(labels, predictions))
 
-            # === Confusion Matrix Metrics (8) ===
             tn, fp, fn, tp = confusion_matrix(labels, predictions, labels=[0, 1]).ravel()
             metrics["final_tp"] = int(tp)
             metrics["final_fp"] = int(fp)
@@ -669,7 +613,6 @@ class BaseTrainer(ABC):
             metrics["final_fpr"] = float(fp / (fp + tn)) if (fp + tn) > 0 else 0.0
             metrics["final_fnr"] = float(fn / (fn + tp)) if (fn + tp) > 0 else 0.0
 
-            # === Calibration Metrics (3) ===
             metrics["final_brier_score"] = float(np.mean((probabilities - labels) ** 2))
             try:
                 prob_true, prob_pred = calibration_curve(labels, probabilities, n_bins=10, strategy='uniform')
@@ -679,19 +622,17 @@ class BaseTrainer(ABC):
                 metrics["final_calibration_error"] = 0.0
                 metrics["final_calibration_max_error"] = 0.0
 
-            # === Threshold Analysis (4) ===
             for thresh in [0.3, 0.5, 0.7]:
                 preds_at_thresh = (probabilities > thresh).astype(int)
                 metrics[f"final_f1_at_{thresh}"] = float(f1_score(labels, preds_at_thresh, zero_division=0))
 
-            # Optimal threshold (Youden's J)
+            # optimal threshold (Youden's J)
             from sklearn.metrics import roc_curve
             fpr_curve, tpr_curve, thresholds = roc_curve(labels, probabilities)
             j_scores = tpr_curve - fpr_curve
             optimal_idx = np.argmax(j_scores)
             metrics["final_optimal_threshold"] = float(thresholds[optimal_idx])
 
-            # === Distribution Metrics (3) ===
             pos_probs = probabilities[labels == 1]
             neg_probs = probabilities[labels == 0]
             if len(pos_probs) > 0 and len(neg_probs) > 0:
@@ -699,7 +640,6 @@ class BaseTrainer(ABC):
                 metrics["final_neg_prob_mean"] = float(np.mean(neg_probs))
                 metrics["final_prob_separation"] = float(np.mean(pos_probs) - np.mean(neg_probs))
 
-            # === Sample Counts ===
             metrics["final_n_samples"] = int(len(labels))
             metrics["final_n_positive"] = int(np.sum(labels))
             metrics["final_n_negative"] = int(len(labels) - np.sum(labels))
@@ -712,7 +652,7 @@ class BaseTrainer(ABC):
 
     def _save_final_evaluation(self, metrics: Dict[str, float]):
         """Save final evaluation metrics to CSV."""
-        # Write as key-value pairs for readability
+        # write as key-value pairs for readability
         with open(self.final_log_file, 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(["metric", "value"])
@@ -778,7 +718,7 @@ class ECDNAFormerTrainer(BaseTrainer):
         train_loader: DataLoader,
         val_loader: Optional[DataLoader] = None,
         focal_gamma: float = 2.0,
-        focal_alpha: float = 0.75,  # Weight for positive class (higher = more focus on minority)
+        focal_alpha: float = 0.75,  # weight for positive class (higher = more focus on minority)
         oncogene_weight: float = 0.5,
         **kwargs
     ):
@@ -813,7 +753,7 @@ class ECDNAFormerTrainer(BaseTrainer):
 
     def compute_loss(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Compute ecDNA-Former loss."""
-        # Forward pass
+        # forward pass
         outputs = self.model(
             sequence_features=batch.get("sequence_features"),
             topology_features=batch.get("topology_features"),
@@ -824,24 +764,24 @@ class ECDNAFormerTrainer(BaseTrainer):
 
         losses = {}
 
-        # Get logits for focal loss (FocalLoss expects logits, not probabilities)
+        # get logits for focal loss (FocalLoss expects logits, not probabilities)
         fused_emb = outputs.get("fused_embedding")
         if fused_emb is not None:
             formation_logits = self.model.formation_head(fused_emb, return_logits=True)
         else:
-            # Fallback: use probability and convert (less accurate)
+            # fallback: use probability and convert (less accurate)
             formation_logits = torch.log(
                 outputs["formation_probability"] / (1 - outputs["formation_probability"] + 1e-8) + 1e-8
             )
 
-        # Formation prediction loss (focal)
+        # formation prediction loss (focal)
         formation_loss = self.focal_loss(
             formation_logits,
             batch["label"].unsqueeze(-1),
         )
         losses["formation_loss"] = formation_loss
 
-        # Oncogene prediction loss
+        # oncogene prediction loss
         if "oncogene_labels" in batch:
             oncogene_loss = nn.functional.binary_cross_entropy(
                 outputs["oncogene_probabilities"],
@@ -872,10 +812,10 @@ class CircularODETrainer(BaseTrainer):
 
     def compute_loss(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Compute CircularODE loss."""
-        # Forward pass
+        # forward pass
         outputs = self.model(
             initial_state=batch["initial_state"],
-            time_points=batch["time_points"][0],  # Shared time points
+            time_points=batch["time_points"][0],  # shared time points
             treatment_info=batch.get("treatment"),
         )
 
@@ -889,11 +829,7 @@ class CircularODETrainer(BaseTrainer):
         return losses
 
     def _get_validation_predictions(self, batch: Dict[str, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        CircularODE is a regression task, not classification.
-        Return None to skip classification metrics.
-        Regression metrics are computed in compute_loss via PhysicsInformedLoss.
-        """
+        """CircularODE is a regression task, not classification. Return None to skip classification metrics. Regression metrics are computed in compute_loss via PhysicsInformedLoss."""
         return None, None
 
 
@@ -925,11 +861,7 @@ class VulnCausalTrainer(BaseTrainer):
         return losses
 
     def _get_validation_predictions(self, batch: Dict[str, torch.Tensor]) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        VulnCausal performs causal inference, not direct classification.
-        The ecDNA labels are inputs, not targets for prediction.
-        Return None to skip standard classification metrics.
-        """
+        """VulnCausal performs causal inference, not direct classification. The ecDNA labels are inputs, not targets for prediction. Return None to skip standard classification metrics."""
         return None, None
 
 
@@ -957,7 +889,7 @@ class ECLIPSETrainer(BaseTrainer):
 
     def compute_loss(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """Compute ECLIPSE loss."""
-        # Forward pass
+        # forward pass
         outputs = self.model(
             sequence_features=batch.get("sequence_features"),
             topology_features=batch.get("topology_features"),
@@ -973,7 +905,7 @@ class ECLIPSETrainer(BaseTrainer):
 
         losses = {}
 
-        # Formation loss
+        # formation loss
         if "formation_probability" in outputs and "label" in batch:
             formation_loss = nn.functional.binary_cross_entropy(
                 outputs["formation_probability"].squeeze(),
@@ -981,7 +913,7 @@ class ECLIPSETrainer(BaseTrainer):
             )
             losses["formation_loss"] = self.module_weights["former"] * formation_loss
 
-        # Risk classification loss
+        # risk classification loss
         if "risk_logits" in outputs and "risk_level" in batch:
             risk_loss = nn.functional.cross_entropy(
                 outputs["risk_logits"],

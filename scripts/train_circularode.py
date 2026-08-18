@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Train CircularODE model for ecDNA copy number dynamics prediction.
+train CircularODE model for ecDNA copy number dynamics prediction.
 
 Uses synthetic trajectory data to learn:
-1. Copy number dynamics over time
-2. Treatment response modeling
-3. Resistance prediction
+- copy number dynamics over time
+- treatment response modeling
+- resistance prediction
 """
 
 import torch
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def parse_ecsimulator_data(data_dir: Path) -> pd.DataFrame:
     """
-    Parse ecSimulator output files to extract trajectory data.
+    parse ecSimulator output files to extract trajectory data.
 
     Returns DataFrame with trajectory_id, time, copy_number, structure_info
     """
@@ -38,11 +38,11 @@ def parse_ecsimulator_data(data_dir: Path) -> pd.DataFrame:
     for traj_file in tqdm(traj_files, desc="Parsing trajectories"):
         traj_id = int(traj_file.stem.split('_')[1])
 
-        # Parse cycles file for structure
+        # parse cycles file for structure
         with open(traj_file) as f:
             lines = f.readlines()
 
-        # Extract interval info
+        # extract interval info
         interval_line = [l for l in lines if l.startswith("Interval")]
         if interval_line:
             parts = interval_line[0].strip().split('\t')
@@ -51,27 +51,27 @@ def parse_ecsimulator_data(data_dir: Path) -> pd.DataFrame:
             end = int(parts[4])
             size = end - start
 
-            # Count segments (proxy for complexity)
+            # count segments (proxy for complexity)
             n_segments = len([l for l in lines if l.startswith("Segment")])
 
-            # Estimate copy number from fasta file size
+            # estimate copy number from fasta file size
             fasta_file = traj_file.parent / f"traj_{traj_id:04d}_amplicon1.fasta"
             if fasta_file.exists():
                 fasta_size = fasta_file.stat().st_size
-                # Rough estimate: copy number ~ fasta_size / interval_size
+                # rough estimate: copy number ~ fasta_size / interval_size
                 estimated_cn = max(1, fasta_size / (size + 1))
             else:
-                estimated_cn = n_segments  # Fallback
+                estimated_cn = n_segments  # fallback
 
-            # Create synthetic time series (evolution simulation)
-            # Simulate copy number changes over generations
+            # create synthetic time series (evolution simulation)
+            # simulate copy number changes over generations
             n_timepoints = 50
             times = np.linspace(0, 100, n_timepoints)
 
-            # Initial CN based on structure
+            # initial CN based on structure
             initial_cn = estimated_cn * np.random.uniform(0.8, 1.2)
 
-            # Simulate trajectory with biological noise
+            # simulate trajectory with biological noise
             cn_trajectory = simulate_cn_trajectory(initial_cn, n_timepoints)
 
             for t_idx, (t, cn) in enumerate(zip(times, cn_trajectory)):
@@ -82,7 +82,7 @@ def parse_ecsimulator_data(data_dir: Path) -> pd.DataFrame:
                     'n_segments': n_segments,
                     'size': size,
                     'chrom': chrom,
-                    'treatment_id': np.random.randint(0, 4),  # Random treatment
+                    'treatment_id': np.random.randint(0, 4),  # random treatment
                 })
 
     df = pd.DataFrame(all_data)
@@ -92,7 +92,7 @@ def parse_ecsimulator_data(data_dir: Path) -> pd.DataFrame:
 
 def simulate_cn_trajectory(initial_cn: float, n_steps: int) -> np.ndarray:
     """
-    Simulate copy number trajectory with biological dynamics.
+    simulate copy number trajectory with biological dynamics.
 
     Incorporates:
     - Random segregation noise (binomial)
@@ -102,7 +102,7 @@ def simulate_cn_trajectory(initial_cn: float, n_steps: int) -> np.ndarray:
     cn = initial_cn
     trajectory = []
 
-    # Random treatment assignment
+    # random treatment assignment
     treatment = np.random.choice(['none', 'targeted', 'chemo', 'maintenance'])
     treatment_start = np.random.randint(10, 30)
     treatment_strength = np.random.uniform(0.3, 0.7)
@@ -110,14 +110,14 @@ def simulate_cn_trajectory(initial_cn: float, n_steps: int) -> np.ndarray:
     for i in range(n_steps):
         trajectory.append(cn)
 
-        # Fitness (favors moderate CN)
+        # fitness (favors moderate CN)
         fitness = 1.0 + 0.02 * cn / (1 + cn / 50) - 0.001 * cn
 
-        # Treatment effect
+        # treatment effect
         t_normalized = i / n_steps * 100
         if treatment != 'none' and t_normalized > treatment_start:
             if treatment == 'targeted':
-                # Higher CN = more sensitive
+                # higher CN = more sensitive
                 death_prob = treatment_strength * min(1.0, cn / 50) * 0.1
             elif treatment == 'chemo':
                 death_prob = treatment_strength * 0.08
@@ -126,16 +126,16 @@ def simulate_cn_trajectory(initial_cn: float, n_steps: int) -> np.ndarray:
 
             fitness *= (1 - death_prob)
 
-        # Selection and segregation
+        # selection and segregation
         if np.random.random() < fitness:
-            # Cell divides with binomial segregation
+            # cell divides with binomial segregation
             if cn > 0:
                 daughter_cn = np.random.binomial(int(2 * cn), 0.5)
-                # Selection between daughters
+                # selection between daughters
                 cn = daughter_cn if np.random.random() < 0.5 else 2 * cn - daughter_cn
                 cn = max(0, cn)
 
-        # Add noise
+        # add noise
         cn = max(0, cn + np.random.normal(0, np.sqrt(max(1, cn)) * 0.3))
 
     return np.array(trajectory)
@@ -155,14 +155,13 @@ class TrajectoryDataset(Dataset):
         self.targets = []
         self.treatments = []
 
-        # Group by trajectory
         for traj_id, group in df.groupby('trajectory_id'):
             group = group.sort_values('time')
             cns = group['copy_number'].values
             times = group['time'].values
             treatment = group['treatment_id'].iloc[0]
 
-            # Create sequences
+            # create sequences
             for i in range(len(cns) - seq_len):
                 self.sequences.append(np.column_stack([
                     cns[i:i+seq_len],
@@ -175,7 +174,7 @@ class TrajectoryDataset(Dataset):
         self.targets = np.array(self.targets, dtype=np.float32)
         self.treatments = np.array(self.treatments, dtype=np.int64)
 
-        # Normalize
+        # normalize
         self.cn_mean = np.mean(self.sequences[:, :, 0])
         self.cn_std = np.std(self.sequences[:, :, 0]) + 1e-6
         self.sequences[:, :, 0] = (self.sequences[:, :, 0] - self.cn_mean) / self.cn_std
@@ -196,7 +195,7 @@ class TrajectoryDataset(Dataset):
 
 class SimpleCircularODE(nn.Module):
     """
-    Simplified CircularODE for training.
+    simplified CircularODE for training.
 
     Predicts next copy number given history and treatment.
     """
@@ -210,10 +209,9 @@ class SimpleCircularODE(nn.Module):
     ):
         super().__init__()
 
-        # Treatment embedding
         self.treatment_emb = nn.Embedding(num_treatments, treatment_dim)
 
-        # Sequence encoder (GRU)
+        # sequence encoder (GRU)
         self.encoder = nn.GRU(
             input_size=input_dim,
             hidden_size=hidden_dim,
@@ -222,7 +220,7 @@ class SimpleCircularODE(nn.Module):
             dropout=0.1,
         )
 
-        # Dynamics head
+        # dynamics head
         self.dynamics = nn.Sequential(
             nn.Linear(hidden_dim + treatment_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -233,7 +231,7 @@ class SimpleCircularODE(nn.Module):
             nn.Linear(hidden_dim // 2, 1),
         )
 
-        # Resistance prediction head
+        # resistance prediction head
         self.resistance_head = nn.Sequential(
             nn.Linear(hidden_dim + treatment_dim, 64),
             nn.ReLU(),
@@ -243,29 +241,24 @@ class SimpleCircularODE(nn.Module):
 
     def forward(self, sequence, treatment):
         """
-        Forward pass.
+        forward pass.
 
         Args:
             sequence: [batch, seq_len, 2] (CN, time)
             treatment: [batch] treatment IDs
-
-        Returns:
-            predictions dict
         """
-        # Encode sequence
         _, hidden = self.encoder(sequence)
-        hidden = hidden[-1]  # Last layer hidden state
+        hidden = hidden[-1]  # last layer hidden state
 
-        # Get treatment embedding
+        # get treatment embedding
         treat_emb = self.treatment_emb(treatment)
 
-        # Combine
         combined = torch.cat([hidden, treat_emb], dim=-1)
 
-        # Predict next CN
+        # predict next CN
         cn_pred = self.dynamics(combined).squeeze(-1)
 
-        # Predict resistance probability
+        # predict resistance probability
         resistance_prob = self.resistance_head(combined).squeeze(-1)
 
         return {
@@ -293,13 +286,13 @@ def train_epoch(model, dataloader, optimizer, device):
         # CN prediction loss
         cn_loss = nn.functional.mse_loss(outputs['cn_pred'], target)
 
-        # Resistance regularization (encourage diversity)
+        # resistance regularization (encourage diversity)
         resistance_entropy = -(
             outputs['resistance_prob'] * torch.log(outputs['resistance_prob'] + 1e-8) +
             (1 - outputs['resistance_prob']) * torch.log(1 - outputs['resistance_prob'] + 1e-8)
         ).mean()
 
-        loss = cn_loss - 0.01 * resistance_entropy  # Encourage uncertainty
+        loss = cn_loss - 0.01 * resistance_entropy  # encourage uncertainty
 
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -335,7 +328,6 @@ def validate(model, dataloader, device):
             all_preds.extend(outputs['cn_pred'].cpu().numpy())
             all_targets.extend(target.cpu().numpy())
 
-    # Compute metrics
     preds = np.array(all_preds)
     targets = np.array(all_targets)
     mse = np.mean((preds - targets) ** 2)
@@ -364,7 +356,7 @@ def main():
 
     data_dir = Path("data/ecdna_trajectories")
 
-    # Parse or generate data
+    # parse or generate data
     cache_file = data_dir / "parsed_trajectories.csv"
     if cache_file.exists():
         logger.info("Loading cached trajectory data...")
@@ -373,10 +365,10 @@ def main():
         df = parse_ecsimulator_data(data_dir)
         df.to_csv(cache_file, index=False)
 
-    # Create dataset
+    # create dataset
     dataset = TrajectoryDataset(df, seq_len=args.seq_len)
 
-    # Split
+    # split
     n_samples = len(dataset)
     indices = np.random.permutation(n_samples)
     train_idx = indices[:int(0.8 * n_samples)]
@@ -390,7 +382,6 @@ def main():
 
     logger.info(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}")
 
-    # Create model
     model = SimpleCircularODE(
         input_dim=2,
         hidden_dim=args.hidden_dim,
@@ -399,11 +390,9 @@ def main():
 
     logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-    # Optimizer
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)
 
-    # Training
     output_dir = Path("checkpoints/circularode")
     output_dir.mkdir(exist_ok=True, parents=True)
 
@@ -441,10 +430,9 @@ def main():
             }, output_dir / "best_model.pt")
             logger.info(f"  Saved best model (val_loss={best_val_loss:.4f})")
 
-    # Save history
+    # save history
     pd.DataFrame(history).to_csv(output_dir / "training_history.csv", index=False)
 
-    # Final evaluation
     logger.info("\n=== FINAL EVALUATION ===")
     checkpoint = torch.load(output_dir / "best_model.pt")
     model.load_state_dict(checkpoint['model_state_dict'])
@@ -454,7 +442,7 @@ def main():
     logger.info(f"MAE: {final_metrics['mae']:.4f}")
     logger.info(f"Correlation: {final_metrics['correlation']:.4f}")
 
-    # Save final results
+    # save final results
     results = {
         'best_epoch': checkpoint['epoch'],
         'val_mse': final_metrics['mse'],

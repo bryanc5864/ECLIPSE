@@ -3,9 +3,9 @@
 Per-lineage prediction analysis for ecDNA-Former.
 
 Breaks down model predictions by cancer lineage to identify:
-1. Which lineages the model performs best/worst on
-2. Whether certain lineages are systematically over/under-predicted
-3. Lineage-specific ecDNA prevalence vs model prediction
+- which lineages the model performs best/worst on
+- whether certain lineages are systematically over/under-predicted
+- lineage-specific ecDNA prevalence vs model prediction
 
 Usage:
     python scripts/analyze_per_lineage.py
@@ -26,18 +26,17 @@ logger = logging.getLogger(__name__)
 def main():
     data_dir = Path("data")
 
-    # Load CytoCellDB for lineage info
+    # load CytoCellDB for lineage info
     cyto = pd.read_excel(data_dir / "cytocell_db" / "CytoCellDB_Supp_File1.xlsx")
     cyto = cyto.dropna(subset=["DepMap_ID"])
     lineage_map = dict(zip(cyto["DepMap_ID"], cyto["lineage"]))
     ecdna_map = dict(zip(cyto["DepMap_ID"], cyto["ECDNA"]))
 
-    # Load val data
     val_data = np.load(data_dir / "features" / "module1_features_val.npz", allow_pickle=True)
     val_ids = val_data["sample_ids"]
     val_labels = val_data["labels"]
 
-    # Load model and predict
+    # load model and predict
     from src.models import ECDNAFormer
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = ECDNAFormer()
@@ -61,7 +60,7 @@ def main():
         outputs = model(**batch)
         predictions = outputs["formation_probability"].cpu().numpy().flatten()
 
-    # Also do training set
+    # also do training set
     train_data = np.load(data_dir / "features" / "module1_features_train.npz", allow_pickle=True)
     train_ids = train_data["sample_ids"]
     train_labels = train_data["labels"]
@@ -76,13 +75,13 @@ def main():
         outputs = model(**batch)
         train_predictions = outputs["formation_probability"].cpu().numpy().flatten()
 
-    # Combine for full analysis
+    # combine for full analysis
     all_ids = np.concatenate([train_ids, val_ids])
     all_labels = np.concatenate([train_labels, val_labels])
     all_preds = np.concatenate([train_predictions, predictions])
     all_splits = np.array(["train"] * len(train_ids) + ["val"] * len(val_ids))
 
-    # Build per-sample DataFrame
+    # build per-sample DataFrame
     records = []
     for i, sid in enumerate(all_ids):
         records.append({
@@ -136,7 +135,7 @@ def main():
         logger.info(f"{row['lineage']:>25s} {row['n_val']:>4.0f} {row['n_pos']:>4.0f} "
                     f"{row['prevalence']:>6.1%} {row['mean_prediction']:>9.3f} {auroc_str:>7s}")
 
-    # Full dataset lineage breakdown
+    # full dataset lineage breakdown
     logger.info(f"\n{'='*60}")
     logger.info("PER-LINEAGE BREAKDOWN (all samples)")
     logger.info(f"{'='*60}")
@@ -171,7 +170,6 @@ def main():
                     f"{row['n_N']:>4.0f} {row['n_unlabeled']:>4.0f} {row['prevalence_Y']:>6.1%} "
                     f"{row['mean_prediction']:>7.3f} {row['pred_gt_035']:>5.0f}")
 
-    # Save results
     output_dir = data_dir / "validation"
     output_dir.mkdir(exist_ok=True)
     lineage_df.to_csv(output_dir / "per_lineage_val.csv", index=False)

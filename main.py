@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-ECLIPSE: Main Entry Point
-
-Command-line interface for ECLIPSE framework.
-"""
+"""cli for the ECLIPSE modules."""
 
 import argparse
 import logging
@@ -55,21 +51,18 @@ def train_model(args):
         logger.info("Training ecDNA-Former (Module 1)...")
         logger.info("Loading ecDNA labels and features...")
 
-        # Load ecDNA dataset
         dataset = ECDNADataset.from_data_dir(
             data_dir=data_dir,
             split="train",
         )
         logger.info(f"Training samples: {len(dataset)}")
 
-        # Create validation set
         val_dataset = ECDNADataset.from_data_dir(
             data_dir=data_dir,
             split="val",
         )
         logger.info(f"Validation samples: {len(val_dataset)}")
 
-        # Create dataloaders
         train_loader = create_dataloader(
             dataset, batch_size=args.batch_size, shuffle=True
         )
@@ -77,11 +70,9 @@ def train_model(args):
             val_dataset, batch_size=args.batch_size, shuffle=False
         )
 
-        # Create model
         model = ECDNAFormer()
         logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
 
-        # Create trainer
         trainer = ECDNAFormerTrainer(
             model=model,
             train_loader=train_loader,
@@ -91,7 +82,6 @@ def train_model(args):
             use_wandb=args.wandb,
         )
 
-        # Train
         history = trainer.train(num_epochs=args.epochs, early_stopping_patience=args.patience)
         logger.info("ecDNA-Former training complete")
         logger.info(f"Best validation loss: {trainer.best_val_loss:.4f}")
@@ -99,7 +89,6 @@ def train_model(args):
     elif args.module == "dynamics":
         logger.info("Training CircularODE (Module 2)...")
 
-        # Load trajectory dataset
         dataset = DynamicsDataset.from_data_dir(
             data_dir=data_dir / "ecdna_trajectories",
             split="train",
@@ -136,7 +125,6 @@ def train_model(args):
     elif args.module == "vuln":
         logger.info("Training VulnCausal (Module 3)...")
 
-        # Load vulnerability dataset
         dataset = VulnerabilityDataset.from_data_dir(
             data_dir=data_dir,
             split="train",
@@ -155,7 +143,6 @@ def train_model(args):
             val_dataset, batch_size=args.batch_size, shuffle=False
         )
 
-        # Get data dimensions from dataset
         num_genes = dataset.crispr.shape[1]
         expression_dim = dataset.expression.shape[1]
         logger.info(f"Data dimensions: {num_genes} genes, {expression_dim} expression features")
@@ -182,7 +169,7 @@ def train_model(args):
         logger.info("Training full ECLIPSE...")
         model = ECLIPSE()
         logger.info(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")
-        # Full ECLIPSE training requires all data sources
+        # full ECLIPSE training requires all data sources
         logger.warning("Full ECLIPSE training not yet implemented - train modules separately first")
         logger.info("ECLIPSE training complete")
 
@@ -196,9 +183,8 @@ def predict(args):
     model = ECLIPSE.from_pretrained(args.checkpoint)
     model.eval()
 
-    # Load input data
     logger.info(f"Loading input from {args.input}...")
-    # (Placeholder for actual prediction)
+    # actual prediction not wired up yet
 
     logger.info("Prediction complete")
 
@@ -209,7 +195,7 @@ def evaluate(args):
     from src.utils.metrics import compute_all_metrics
 
     logger.info(f"Evaluating model {args.checkpoint}...")
-    # (Placeholder for actual evaluation)
+    # actual evaluation not wired up yet
 
     logger.info("Evaluation complete")
 
@@ -237,14 +223,12 @@ Examples:
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
-    # Download command
     download_parser = subparsers.add_parser("download", help="Download datasets")
     download_parser.add_argument("--data-dir", type=str, default="data",
                                  help="Directory to save data")
     download_parser.add_argument("--skip-large", action="store_true",
                                  help="Skip large files (Hi-C)")
 
-    # Train command
     train_parser = subparsers.add_parser("train", help="Train model")
     train_parser.add_argument("--module", type=str, required=True,
                               choices=["former", "dynamics", "vuln", "eclipse"],
@@ -266,7 +250,6 @@ Examples:
     train_parser.add_argument("--wandb", action="store_true",
                               help="Use Weights & Biases logging")
 
-    # Predict command
     predict_parser = subparsers.add_parser("predict", help="Run prediction")
     predict_parser.add_argument("--checkpoint", type=str, required=True,
                                 help="Model checkpoint path")
@@ -275,7 +258,6 @@ Examples:
     predict_parser.add_argument("--output", type=str, default="predictions.pt",
                                 help="Output path")
 
-    # Evaluate command
     eval_parser = subparsers.add_parser("evaluate", help="Evaluate model")
     eval_parser.add_argument("--checkpoint", type=str, required=True,
                              help="Model checkpoint path")
