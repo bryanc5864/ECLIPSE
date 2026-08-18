@@ -5,7 +5,8 @@
 
 set -e
 
-HIC_DIR="/home/bcheng/eclipse/data/hic"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+HIC_DIR="${HIC_DIR:-$PROJECT_DIR/data/hic}"
 mkdir -p "$HIC_DIR"
 cd "$HIC_DIR"
 
